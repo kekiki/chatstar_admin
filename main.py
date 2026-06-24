@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, Form, HTTPException
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +8,7 @@ from typing import Optional
 import auth
 from database import get_db, engine
 import models
+import json
 
 # 创建数据表（首次运行自动建表）
 models.Base.metadata.create_all(bind=engine)
@@ -38,15 +39,6 @@ def require_login(request: Request, db: Session = Depends(get_db)):
     if not username:
         raise HTTPException(status_code=302, headers={"location": "/login"})
     return username
-
-@app.get("/")
-def home():
-    """Health check endpoint."""
-    return {
-        "status": "ok",
-        "service": "chatstar-api",
-        "version": "1.0.0"
-    }
 
 # 登录页面
 @app.get("/login", response_class=HTMLResponse)
@@ -124,10 +116,37 @@ async def app_config(request: Request, db: Session = Depends(get_db), _user=Depe
     content = tpl.render({"request": request, "active_menu": "config", "apps": apps})
     return HTMLResponse(content)
 
+# 新增应用接口
+@app.post("/admin/api/add_app")
+async def add_app(
+    app_name: str = Body(),
+    app_key: str = Body(),
+    config_json: str = Body(),
+    db: Session = Depends(get_db),
+    _user = Depends(require_login)
+):
+    exist = db.query(models.AppInfo).filter(models.AppInfo.app_key == app_key).first()
+    if exist:
+        return {"code": 400, "msg": "AppKey已存在"}
+    new_app = models.AppInfo(
+        app_name=app_name,
+        app_key=app_key,
+        config_json=config_json,
+        status=True
+    )
+    db.add(new_app)
+    db.commit()
+    return {"code": 200, "msg": "新增成功"}
+
 # 首页自动跳转看板
 @app.get("/admin")
 async def admin_index():
     return RedirectResponse("/admin/dashboard")
+
+@app.get("/")
+async def admin_index():
+    return RedirectResponse("/admin/dashboard")
+
 
 if __name__ == "__main__":
     import uvicorn

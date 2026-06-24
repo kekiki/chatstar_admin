@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>应用配置管理</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAppModal">新增应用</button>
+</div>
+<hr>
+<div class="card mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>应用ID</th>
+                    <th>应用名称</th>
+                    <th>AppKey</th>
+                    <th>运行状态</th>
+                    <th>配置内容</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in apps %}
+                <tr>
+                    <td>{{ app.id }}</td>
+                    <td>{{ app.app_name }}</td>
+                    <td>{{ app.app_key }}</td>
+                    <td>
+                        {% if app.status %}
+                        <span class="badge bg-success">启用</span>
+                        {% else %}
+                        <span class="badge bg-secondary">停用</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info view-config" data-config="{{ app.config_json }}">查看配置</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新增应用弹窗 -->
+<div class="modal fade" id="addAppModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增APP应用</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAppForm">
+                    <div class="mb-3">
+                        <label>应用名称</label>
+                        <input type="text" name="app_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>AppKey（唯一标识）</label>
+                        <input type="text" name="app_key" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>配置JSON</label>
+                        <textarea name="config_json" class="form-control" rows="5">{"pay_rate":0.3,"ad_switch":true}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddApp">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查看配置弹窗 -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>应用配置详情</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="configText"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// 查看配置弹窗
+$(".view-config").click(function(){
+    let cfg = $(this).data("config");
+    $("#configText").text(JSON.stringify(JSON.parse(cfg), null, 2));
+    new bootstrap.Modal("#configModal").show();
+})
+
+// 新增应用提交（后端需要配套POST接口，这里仅前端展示）
+$("#submitAddApp").click(function(){
+    alert("新增功能需要后端编写POST接口保存至AppInfo表，可自行补充接口逻辑");
+})
+</script>
+{% endblock %}

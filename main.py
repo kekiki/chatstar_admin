@@ -51,7 +51,9 @@ def home():
 # 登录页面
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    tpl = templates.env.get_template("login.html")
+    content = tpl.render({"request": request})
+    return HTMLResponse(content)
 
 # 登录提交接口
 @app.post("/login")
@@ -63,7 +65,9 @@ async def login_submit(
 ):
     admin = db.query(models.AdminUser).filter(models.AdminUser.username == username).first()
     if not admin or not auth.verify_password(password, admin.password):
-        return templates.TemplateResponse("login.html", {"request": request, "msg": "账号密码错误"})
+        tpl = templates.env.get_template("login.html")
+        content = tpl.render({"request": request, "msg": "账号密码错误"})
+        return HTMLResponse(content)
     # 生成token写入cookie
     token = auth.create_access_token({"sub": username})
     resp = RedirectResponse(url="/admin/dashboard", status_code=302)
@@ -83,32 +87,42 @@ async def dashboard(request: Request, db: Session = Depends(get_db), _user=Depen
     # 查询统计数据给ECharts渲染
     stat_list = db.query(models.DailyStat).order_by(models.DailyStat.stat_date).all()
     app_list = db.query(models.AppInfo).all()
-    return templates.TemplateResponse("dashboard.html", {
+    tpl = templates.env.get_template("dashboard.html")
+    content = tpl.render({
         "request": request,
         "active_menu": "dashboard",
         "stat_list": stat_list,
-        "app_list": app_list
+        "app_list": app_list,
     })
+    return HTMLResponse(content)
 
 @app.get("/admin/user", response_class=HTMLResponse)
 async def user_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
     user_list = db.query(models.AppUser).all()
-    return templates.TemplateResponse("user_list.html", {"request": request, "active_menu": "user", "user_list": user_list})
+    tpl = templates.env.get_template("user_list.html")
+    content = tpl.render({"request": request, "active_menu": "user", "user_list": user_list})
+    return HTMLResponse(content)
 
 @app.get("/admin/anchor", response_class=HTMLResponse)
 async def anchor_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
     anchor_list = db.query(models.Anchor).all()
-    return templates.TemplateResponse("anchor_list.html", {"request": request, "active_menu": "anchor", "anchor_list": anchor_list})
+    tpl = templates.env.get_template("anchor_list.html")
+    content = tpl.render({"request": request, "active_menu": "anchor", "anchor_list": anchor_list})
+    return HTMLResponse(content)
 
 @app.get("/admin/order", response_class=HTMLResponse)
 async def order_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
     order_list = db.query(models.PayOrder).all()
-    return templates.TemplateResponse("order_list.html", {"request": request, "active_menu": "order", "order_list": order_list})
+    tpl = templates.env.get_template("order_list.html")
+    content = tpl.render({"request": request, "active_menu": "order", "order_list": order_list})
+    return HTMLResponse(content)
 
 @app.get("/admin/config", response_class=HTMLResponse)
 async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
     apps = db.query(models.AppInfo).all()
-    return templates.TemplateResponse("app_config.html", {"request": request, "active_menu": "config", "apps": apps})
+    tpl = templates.env.get_template("app_config.html")
+    content = tpl.render({"request": request, "active_menu": "config", "apps": apps})
+    return HTMLResponse(content)
 
 # 首页自动跳转看板
 @app.get("/admin")

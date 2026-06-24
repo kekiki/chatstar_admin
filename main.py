@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, Depends, Form, RedirectResponse, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Depends, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session

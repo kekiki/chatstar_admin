@@ -3,3 +3,12 @@ uvicorn
 sqlalchemy
 python-multipart
 python-dotenv
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib
+sqlalchemy
+psycopg2-binary
+python-multipart
+python-dotenv
+requests

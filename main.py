@@ -25,6 +25,9 @@ app.add_middleware(
 # app.mount("/static", StaticFiles(directory="static"), name="static")
 # 模板目录
 templates = Jinja2Templates(directory="templates")
+# Disable Jinja2 template caching to avoid environment cache key issues in some Jinja2 versions
+# (container should instead install the pinned `jinja2==3.0.3` from requirements.txt)
+templates.env.cache = None
 
 # 全局鉴权依赖，未登录跳转登录页
 def require_login(request: Request, db: Session = Depends(get_db)):

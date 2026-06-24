@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 import auth
@@ -12,6 +13,14 @@ import models
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ChatStar管理后台")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # 生产替换为你的前端域名
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 挂载静态文件
 # app.mount("/static", StaticFiles(directory="static"), name="static")
 # 模板目录
@@ -26,6 +35,15 @@ def require_login(request: Request, db: Session = Depends(get_db)):
     if not username:
         raise HTTPException(status_code=302, headers={"location": "/login"})
     return username
+
+@app.get("/")
+def home():
+    """Health check endpoint."""
+    return {
+        "status": "ok",
+        "service": "chatstar-api",
+        "version": "1.0.0"
+    }
 
 # 登录页面
 @app.get("/login", response_class=HTMLResponse)

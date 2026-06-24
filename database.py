@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # 数据库配置 - 从环境变量读取，如果没有则使用默认值
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./chatstar_admin.db')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./chatstar_data.db')
 
 engine = create_engine(
     DATABASE_URL,

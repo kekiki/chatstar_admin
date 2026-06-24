@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>实时数据看板</h2>
+<hr>
+<div class="row">
+    <!-- 图表1：新增付费 & 总付费 -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-3">
+            <h5>付费数据趋势</h5>
+            <div id="payChart" style="height:350px;"></div>
+        </div>
+    </div>
+    <!-- 图表2：新增用户、日活 -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-3">
+            <h5>用户增长/日活</h5>
+            <div id="userChart" style="height:350px;"></div>
+        </div>
+    </div>
+    <!-- 图表3：付费率 -->
+    <div class="col-md-12">
+        <div class="card p-3">
+            <h5>新增付费率 / 日活付费率</h5>
+            <div id="rateChart" style="height:350px;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+// 后端传入的统计数据转JS数组
+const statData = {{ stat_list | tojson }};
+const dates = statData.map(item => item.stat_date);
+const newPayMoney = statData.map(item => item.total_pay_money);
+const newUser = statData.map(item => item.new_user);
+const dau = statData.map(item => item.dau);
+// 计算付费率
+const newPayRate = statData.map(item => item.new_pay_user / (item.new_user || 1) * 100);
+const dauPayRate = statData.map(item => item.new_pay_user / (item.dau || 1) * 100);
+
+// 付费图表
+let payChart = echarts.init(document.getElementById('payChart'));
+payChart.setOption({
+    xAxis: {data: dates},
+    yAxis: {},
+    series: [{name:"总付费", type:"bar", data:newPayMoney}]
+});
+
+// 用户日活图表
+let userChart = echarts.init(document.getElementById('userChart'));
+userChart.setOption({
+    xAxis: {data: dates},
+    yAxis: {},
+    series: [
+        {name:"新增用户", type:"line", data:newUser},
+        {name:"日活DAU", type:"line", data:dau}
+    ]
+});
+
+// 付费率图表
+let rateChart = echarts.init(document.getElementById('rateChart'));
+rateChart.setOption({
+    tooltip: {trigger: 'axis', formatter: '{b}<br/>{a}: {c}%'},
+    xAxis: {data: dates},
+    yAxis: {name:"百分比(%)"},
+    series: [
+        {name:"新增付费率", type:"line", data:newPayRate},
+        {name:"日活付费率", type:"line", data:dauPayRate}
+    ]
+});
+</script>
+{% endblock %}

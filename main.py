@@ -1,150 +1,99 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, Depends, Form, RedirectResponse, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from database import engine, get_db, Base
-from models import Admin, User, Streamer, Order, App
+from typing import Optional
+import auth
+from database import get_db, engine
+import models
 
-# 创建数据库表
-Base.metadata.create_all(bind=engine)
+# 创建数据表（首次运行自动建表）
+models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="ChatStar Admin API")
+app = FastAPI(title="ChatStar管理后台")
+# 挂载静态文件
+app.mount("/static", StaticFiles(directory="static"), name="static")
+# 模板目录
+templates = Jinja2Templates(directory="templates")
 
-# CORS配置
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 全局鉴权依赖，未登录跳转登录页
+def require_login(request: Request, db: Session = Depends(get_db)):
+    token: Optional[str] = request.cookies.get("admin_token")
+    if not token:
+        raise HTTPException(status_code=302, headers={"location": "/login"})
+    username = auth.get_current_admin(token)
+    if not username:
+        raise HTTPException(status_code=302, headers={"location": "/login"})
+    return username
 
-# 数据库查询接口 - 预留扩展点
+# 登录页面
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/api/apps")
-def get_apps(db: Session = Depends(get_db)):
-    """获取应用列表"""
-    apps = db.query(App).all()
-    return {"apps": [app.to_dict() for app in apps]}
-
-@app.get("/api/users")
-def get_users(
-    page: int = 1,
-    per_page: int = 20,
-    search: str = None,
-    app_id: int = None,
-    is_active: bool = None,
-    is_premium: bool = None,
+# 登录提交接口
+@app.post("/login")
+async def login_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    """获取用户列表 - 支持筛选"""
-    query = db.query(User)
-    
-    if search:
-        query = query.filter(
-            (User.username.contains(search)) |
-            (User.email.contains(search)) |
-            (User.phone.contains(search))
-        )
-    if app_id:
-        query = query.filter(User.app_id == app_id)
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
-    if is_premium is not None:
-        query = query.filter(User.is_premium == is_premium)
-    
-    total = query.count()
-    users = query.offset((page - 1) * per_page).limit(per_page).all()
-    
-    return {
-        "users": [user.to_dict() for user in users],
-        "total": total
-    }
+    admin = db.query(models.AdminUser).filter(models.AdminUser.username == username).first()
+    if not admin or not auth.verify_password(password, admin.password):
+        return templates.TemplateResponse("login.html", {"request": request, "msg": "账号密码错误"})
+    # 生成token写入cookie
+    token = auth.create_access_token({"sub": username})
+    resp = RedirectResponse(url="/admin/dashboard", status_code=302)
+    resp.set_cookie(key="admin_token", value=token, httponly=True)
+    return resp
 
-@app.get("/api/streamers")
-def get_streamers(
-    page: int = 1,
-    per_page: int = 20,
-    search: str = None,
-    app_id: int = None,
-    is_active: bool = None,
-    is_verified: bool = None,
-    db: Session = Depends(get_db)
-):
-    """获取主播列表 - 支持筛选"""
-    query = db.query(Streamer)
-    
-    if search:
-        query = query.filter(
-            (Streamer.username.contains(search)) |
-            (Streamer.display_name.contains(search))
-        )
-    if app_id:
-        query = query.filter(Streamer.app_id == app_id)
-    if is_active is not None:
-        query = query.filter(Streamer.is_active == is_active)
-    if is_verified is not None:
-        query = query.filter(Streamer.is_verified == is_verified)
-    
-    total = query.count()
-    streamers = query.offset((page - 1) * per_page).limit(per_page).all()
-    
-    return {
-        "streamers": [streamer.to_dict() for streamer in streamers],
-        "total": total
-    }
+# 退出登录
+@app.get("/logout")
+async def logout():
+    resp = RedirectResponse("/login")
+    resp.delete_cookie("admin_token")
+    return resp
 
-@app.get("/api/orders")
-def get_orders(
-    page: int = 1,
-    per_page: int = 20,
-    search: str = None,
-    app_id: int = None,
-    user_id: int = None,
-    status: str = None,
-    db: Session = Depends(get_db)
-):
-    """获取订单列表 - 支持筛选"""
-    query = db.query(Order)
-    
-    if search:
-        query = query.filter(Order.order_no.contains(search))
-    if app_id:
-        query = query.filter(Order.app_id == app_id)
-    if user_id:
-        query = query.filter(Order.user_id == user_id)
-    if status:
-        query = query.filter(Order.status == status)
-    
-    total = query.count()
-    orders = query.offset((page - 1) * per_page).limit(per_page).all()
-    
-    return {
-        "orders": [order.to_dict() for order in orders],
-        "total": total
-    }
+# ---------------- 后台路由（全部需要登录） ----------------
+@app.get("/admin/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+    # 查询统计数据给ECharts渲染
+    stat_list = db.query(models.DailyStat).order_by(models.DailyStat.stat_date).all()
+    app_list = db.query(models.AppInfo).all()
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "active_menu": "dashboard",
+        "stat_list": stat_list,
+        "app_list": app_list
+    })
 
-@app.get("/api/dashboard/apps")
-def get_dashboard_apps(db: Session = Depends(get_db)):
-    """获取看板应用列表"""
-    apps = db.query(App).filter(App.is_active == True).all()
-    return {"apps": [app.to_dict() for app in apps]}
+@app.get("/admin/user", response_class=HTMLResponse)
+async def user_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+    user_list = db.query(models.AppUser).all()
+    return templates.TemplateResponse("user_list.html", {"request": request, "active_menu": "user", "user_list": user_list})
 
-@app.get("/api/dashboard/stats")
-def get_dashboard_stats(db: Session = Depends(get_db)):
-    """获取总体统计"""
-    total_apps = db.query(App).count()
-    total_users = db.query(User).count()
-    total_streamers = db.query(Streamer).count()
-    total_orders = db.query(Order).count()
-    
-    return {
-        "total_apps": total_apps,
-        "total_users": total_users,
-        "total_streamers": total_streamers,
-        "total_orders": total_orders,
-        "total_revenue": sum([float(o.amount) for o in db.query(Order).all()]) or 0
-    }
+@app.get("/admin/anchor", response_class=HTMLResponse)
+async def anchor_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+    anchor_list = db.query(models.Anchor).all()
+    return templates.TemplateResponse("anchor_list.html", {"request": request, "active_menu": "anchor", "anchor_list": anchor_list})
+
+@app.get("/admin/order", response_class=HTMLResponse)
+async def order_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+    order_list = db.query(models.PayOrder).all()
+    return templates.TemplateResponse("order_list.html", {"request": request, "active_menu": "order", "order_list": order_list})
+
+@app.get("/admin/config", response_class=HTMLResponse)
+async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+    apps = db.query(models.AppInfo).all()
+    return templates.TemplateResponse("app_config.html", {"request": request, "active_menu": "config", "apps": apps})
+
+# 首页自动跳转看板
+@app.get("/admin")
+async def admin_index():
+    return RedirectResponse("/admin/dashboard")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

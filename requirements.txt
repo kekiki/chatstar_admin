@@ -3,6 +3,7 @@ uvicorn
 sqlalchemy
 python-multipart
 python-dotenv
+jinja2
 fastapi
 uvicorn
 python-jose[cryptography]

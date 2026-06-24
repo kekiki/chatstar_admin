@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Search, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { USE_MOCK_DATA, API_BASE_URL } from '../config'
 
 const Orders = () => {
   const [orders, setOrders] = useState([])
@@ -15,18 +16,73 @@ const Orders = () => {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
+  const generateMockOrders = (count) => {
+    const statuses = ['pending', 'completed', 'cancelled', 'refunded']
+    const paymentMethods = ['wechat', 'alipay', 'credit_card']
+    const productTypes = ['subscription', 'virtual_item', 'gift']
+    
+    return Array.from({ length: count }, (_, i) => ({
+      id: i + 1 + (page - 1) * 20,
+      app_id: 1,
+      user_id: Math.floor(Math.random() * 100) + 1,
+      order_no: `ORD${Date.now()}${String(Math.random()).substring(2, 6)}`,
+      amount: Math.random() * 200 + 10,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+      product_type: productTypes[Math.floor(Math.random() * productTypes.length)],
+      product_id: `prod_${Math.floor(Math.random() * 100)}`,
+      created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+    }))
+  }
+
   useEffect(() => {
-    fetchApps()
-    fetchStats()
+    if (USE_MOCK_DATA) {
+      setApps([
+        { id: 1, name: 'ChatStar Live' },
+        { id: 2, name: 'ChatStar Dating' },
+        { id: 3, name: 'ChatStar Gaming' }
+      ])
+      setStats({
+        total_orders: 500,
+        completed_orders: 350,
+        pending_orders: 80,
+        cancelled_orders: 50,
+        refunded_orders: 20,
+        total_revenue: 25000
+      })
+    } else {
+      fetchApps()
+      fetchStats()
+    }
   }, [selectedApp])
 
   useEffect(() => {
-    fetchOrders()
+    if (USE_MOCK_DATA) {
+      setLoading(true)
+      setTimeout(() => {
+        const mockOrders = generateMockOrders(20)
+        let filteredOrders = mockOrders
+
+        if (search) {
+          filteredOrders = filteredOrders.filter(o => o.order_no.includes(search))
+        }
+
+        if (status) {
+          filteredOrders = filteredOrders.filter(o => o.status === status)
+        }
+
+        setOrders(filteredOrders)
+        setTotal(filteredOrders.length)
+        setLoading(false)
+      }, 300)
+    } else {
+      fetchOrders()
+    }
   }, [page, search, selectedApp, status, startDate, endDate])
 
   const fetchApps = async () => {
     try {
-      const response = await axios.get('/api/apps')
+      const response = await axios.get(`${API_BASE_URL}/api/apps`)
       setApps(response.data.apps)
     } catch (error) {
       console.error('Failed to fetch apps:', error)
@@ -36,7 +92,7 @@ const Orders = () => {
   const fetchStats = async () => {
     try {
       const params = selectedApp ? { app_id: selectedApp } : {}
-      const response = await axios.get('/api/orders/stats/summary', { params })
+      const response = await axios.get(`${API_BASE_URL}/api/orders/stats/summary`, { params })
       setStats(response.data)
     } catch (error) {
       console.error('Failed to fetch stats:', error)
@@ -55,7 +111,7 @@ const Orders = () => {
         ...(startDate && { start_date: startDate }),
         ...(endDate && { end_date: endDate }),
       }
-      const response = await axios.get('/api/orders', { params })
+      const response = await axios.get(`${API_BASE_URL}/api/orders`, { params })
       setOrders(response.data.orders)
       setTotal(response.data.total)
     } catch (error) {
@@ -70,14 +126,17 @@ const Orders = () => {
     setPage(1)
   }
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      await axios.put(`/api/orders/${orderId}`, { status: newStatus })
-      fetchOrders()
-      fetchStats()
-    } catch (error) {
-      console.error('Failed to update order:', error)
-      alert('更新失败')
+  const updateOrderStatus = (orderId, newStatus) => {
+    setOrders(orders.map(o => 
+      o.id === orderId ? { ...o, status: newStatus } : o
+    ))
+    if (stats) {
+      setStats({
+        ...stats,
+        completed_orders: newStatus === 'completed' ? stats.completed_orders + 1 : stats.completed_orders,
+        pending_orders: newStatus === 'pending' ? stats.pending_orders + 1 : stats.pending_orders,
+        cancelled_orders: newStatus === 'cancelled' ? stats.cancelled_orders + 1 : stats.cancelled_orders
+      })
     }
   }
 

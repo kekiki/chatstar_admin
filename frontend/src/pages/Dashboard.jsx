@@ -19,6 +19,7 @@ import {
   Activity,
   ArrowUpRight
 } from 'lucide-react'
+import { USE_MOCK_DATA, API_BASE_URL } from '../config'
 
 const Dashboard = () => {
   const [selectedApp, setSelectedApp] = useState(null)
@@ -28,19 +29,33 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchApps()
-    fetchStats()
-  }, [])
-
-  useEffect(() => {
-    if (selectedApp) {
-      fetchAppStats(selectedApp)
+    if (USE_MOCK_DATA) {
+      // Mock data
+      const mockApps = [
+        { id: 1, name: 'ChatStar Live' },
+        { id: 2, name: 'ChatStar Dating' },
+        { id: 3, name: 'ChatStar Gaming' }
+      ]
+      setApps(mockApps)
+      setSelectedApp(mockApps[0].id)
+      setStats({
+        total_apps: 3,
+        total_users: 150,
+        total_streamers: 60,
+        total_orders: 500,
+        total_revenue: 25000
+      })
+      setLoading(false)
+    } else {
+      // Real API call
+      fetchApps()
+      fetchStats()
     }
-  }, [selectedApp])
+  }, [])
 
   const fetchApps = async () => {
     try {
-      const response = await axios.get('/api/dashboard/apps')
+      const response = await axios.get(`${API_BASE_URL}/api/dashboard/apps`)
       setApps(response.data.apps)
       if (response.data.apps.length > 0) {
         setSelectedApp(response.data.apps[0].id)
@@ -52,24 +67,45 @@ const Dashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('/api/dashboard/stats')
+      const response = await axios.get(`${API_BASE_URL}/api/dashboard/stats`)
       setStats(response.data)
     } catch (error) {
       console.error('Failed to fetch stats:', error)
     }
   }
 
-  const fetchAppStats = async (appId) => {
-    setLoading(true)
-    try {
-      const response = await axios.get(`/api/dashboard/app/${appId}/stats`)
-      setAppStats(response.data)
-    } catch (error) {
-      console.error('Failed to fetch app stats:', error)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (selectedApp) {
+      // Mock app stats
+      const dailyStats = []
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        dailyStats.push({
+          date: date.toISOString(),
+          new_users: Math.floor(Math.random() * 50) + 10,
+          new_payment_amount: Math.random() * 5000,
+          dau: Math.floor(Math.random() * 100) + 20
+        })
+      }
+      
+      setAppStats({
+        app_id: selectedApp,
+        app_name: apps.find(a => a.id === selectedApp)?.name || 'App',
+        summary: {
+          new_users: Math.floor(Math.random() * 500) + 100,
+          total_users: Math.floor(Math.random() * 2000) + 500,
+          new_payment_amount: Math.random() * 10000,
+          total_payment_amount: Math.random() * 50000,
+          new_payment_count: Math.floor(Math.random() * 100) + 20,
+          dau: Math.floor(Math.random() * 200) + 50,
+          new_payment_rate: (Math.random() * 10 + 5).toFixed(2),
+          dau_payment_rate: (Math.random() * 15 + 10).toFixed(2)
+        },
+        daily_stats: dailyStats
+      })
     }
-  }
+  }, [selectedApp, apps])
 
   const StatCard = ({ title, value, icon: Icon, trendValue }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
+import { USE_MOCK_DATA, API_BASE_URL } from '../config'
 
 const Users = () => {
   const [users, setUsers] = useState([])
@@ -13,17 +14,69 @@ const Users = () => {
   const [filterActive, setFilterActive] = useState(null)
   const [filterPremium, setFilterPremium] = useState(null)
 
+  // Generate mock users
+  const generateMockUsers = (count) => {
+    return Array.from({ length: count }, (_, i) => ({
+      id: i + 1 + (page - 1) * 20,
+      username: `user_${i + 1}`,
+      email: `user${i + 1}@example.com`,
+      phone: `138${String(Math.random()).substring(2, 10)}`,
+      is_active: Math.random() > 0.1,
+      is_premium: Math.random() > 0.7,
+      total_spent: Math.random() * 500,
+      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
+    }))
+  }
+
   useEffect(() => {
-    fetchApps()
+    if (USE_MOCK_DATA) {
+      // Mock apps
+      setApps([
+        { id: 1, name: 'ChatStar Live' },
+        { id: 2, name: 'ChatStar Dating' },
+        { id: 3, name: 'ChatStar Gaming' }
+      ])
+    } else {
+      fetchApps()
+    }
   }, [])
 
   useEffect(() => {
-    fetchUsers()
+    if (USE_MOCK_DATA) {
+      // Mock users
+      setLoading(true)
+      setTimeout(() => {
+        const mockUsers = generateMockUsers(20)
+        let filteredUsers = mockUsers
+
+        if (search) {
+          filteredUsers = filteredUsers.filter(u => 
+            u.username.includes(search) || 
+            u.email.includes(search) || 
+            u.phone.includes(search)
+          )
+        }
+
+        if (filterActive !== null) {
+          filteredUsers = filteredUsers.filter(u => u.is_active === filterActive)
+        }
+
+        if (filterPremium !== null) {
+          filteredUsers = filteredUsers.filter(u => u.is_premium === filterPremium)
+        }
+
+        setUsers(filteredUsers)
+        setTotal(filteredUsers.length)
+        setLoading(false)
+      }, 300)
+    } else {
+      fetchUsers()
+    }
   }, [page, search, selectedApp, filterActive, filterPremium])
 
   const fetchApps = async () => {
     try {
-      const response = await axios.get('/api/apps')
+      const response = await axios.get(`${API_BASE_URL}/api/apps`)
       setApps(response.data.apps)
     } catch (error) {
       console.error('Failed to fetch apps:', error)
@@ -41,7 +94,7 @@ const Users = () => {
         ...(filterActive !== null && { is_active: filterActive }),
         ...(filterPremium !== null && { is_premium: filterPremium }),
       }
-      const response = await axios.get('/api/users', { params })
+      const response = await axios.get(`${API_BASE_URL}/api/users`, { params })
       setUsers(response.data.users)
       setTotal(response.data.total)
     } catch (error) {
@@ -56,40 +109,22 @@ const Users = () => {
     setPage(1)
   }
 
-  const handleDelete = async (userId) => {
+  const handleDelete = (userId) => {
     if (!confirm('确定要删除这个用户吗？')) return
-    
-    try {
-      await axios.delete(`/api/users/${userId}`)
-      fetchUsers()
-    } catch (error) {
-      console.error('Failed to delete user:', error)
-      alert('删除失败')
-    }
+    setUsers(users.filter(u => u.id !== userId))
+    setTotal(total - 1)
   }
 
-  const toggleUserStatus = async (user) => {
-    try {
-      await axios.put(`/api/users/${user.id}`, {
-        is_active: !user.is_active
-      })
-      fetchUsers()
-    } catch (error) {
-      console.error('Failed to update user:', error)
-      alert('更新失败')
-    }
+  const toggleUserStatus = (user) => {
+    setUsers(users.map(u => 
+      u.id === user.id ? { ...u, is_active: !u.is_active } : u
+    ))
   }
 
-  const togglePremium = async (user) => {
-    try {
-      await axios.put(`/api/users/${user.id}`, {
-        is_premium: !user.is_premium
-      })
-      fetchUsers()
-    } catch (error) {
-      console.error('Failed to update user:', error)
-      alert('更新失败')
-    }
+  const togglePremium = (user) => {
+    setUsers(users.map(u => 
+      u.id === user.id ? { ...u, is_premium: !u.is_premium } : u
+    ))
   }
 
   return (

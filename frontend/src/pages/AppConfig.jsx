@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Plus, Edit, Trash2, Key, Copy, Check } from 'lucide-react'
+import { USE_MOCK_DATA, API_BASE_URL } from '../config'
 
 const AppConfig = () => {
   const [apps, setApps] = useState([])
@@ -15,14 +16,60 @@ const AppConfig = () => {
     config: '{}'
   })
 
+  const generateMockApps = () => {
+    return [
+      {
+        id: 1,
+        name: 'ChatStar Live',
+        description: '直播社交平台',
+        icon_url: '',
+        app_key: 'mock-key-live-' + Math.random().toString(36).substring(7),
+        is_active: true,
+        config: { max_users: 10000, features: ['chat', 'video', 'voice'] },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        name: 'ChatStar Dating',
+        description: '交友约会平台',
+        icon_url: '',
+        app_key: 'mock-key-dating-' + Math.random().toString(36).substring(7),
+        is_active: true,
+        config: { max_users: 5000, features: ['chat', 'match'] },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 3,
+        name: 'ChatStar Gaming',
+        description: '游戏互动平台',
+        icon_url: '',
+        app_key: 'mock-key-gaming-' + Math.random().toString(36).substring(7),
+        is_active: true,
+        config: { max_users: 20000, features: ['chat', 'game', 'voice'] },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ]
+  }
+
   useEffect(() => {
-    fetchApps()
+    if (USE_MOCK_DATA) {
+      setLoading(true)
+      setTimeout(() => {
+        setApps(generateMockApps())
+        setLoading(false)
+      }, 300)
+    } else {
+      fetchApps()
+    }
   }, [])
 
   const fetchApps = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('/api/apps')
+      const response = await axios.get(`${API_BASE_URL}/api/apps`)
       setApps(response.data.apps)
     } catch (error) {
       console.error('Failed to fetch apps:', error)
@@ -53,59 +100,52 @@ const AppConfig = () => {
     setShowModal(true)
   }
 
-  const handleDelete = async (appId) => {
+  const handleDelete = (appId) => {
     if (!confirm('确定要删除这个应用吗？此操作不可恢复！')) return
-    
-    try {
-      await axios.delete(`/api/apps/${appId}`)
-      fetchApps()
-    } catch (error) {
-      console.error('Failed to delete app:', error)
-      alert('删除失败')
-    }
+    setApps(apps.filter(a => a.id !== appId))
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     
     try {
       const config = JSON.parse(formData.config)
-      const data = {
-        name: formData.name,
-        description: formData.description,
-        icon_url: formData.icon_url,
-        config
-      }
-
+      
       if (editingApp) {
-        await axios.put(`/api/apps/${editingApp.id}`, data)
+        setApps(apps.map(a => 
+          a.id === editingApp.id 
+            ? { ...a, name: formData.name, description: formData.description, icon_url: formData.icon_url, config, updated_at: new Date().toISOString() }
+            : a
+        ))
       } else {
-        await axios.post('/api/apps', data)
+        const newApp = {
+          id: Math.max(...apps.map(a => a.id), 0) + 1,
+          name: formData.name,
+          description: formData.description,
+          icon_url: formData.icon_url,
+          app_key: 'mock-key-' + Math.random().toString(36).substring(7),
+          is_active: true,
+          config,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        setApps([...apps, newApp])
       }
 
       setShowModal(false)
-      fetchApps()
     } catch (error) {
-      console.error('Failed to save app:', error)
-      if (error.response?.data?.detail) {
-        alert(error.response.data.detail)
-      } else {
-        alert('保存失败，请检查配置格式')
-      }
+      alert('保存失败，请检查配置格式')
     }
   }
 
-  const handleRegenerateKey = async (appId) => {
+  const handleRegenerateKey = (appId) => {
     if (!confirm('确定要重新生成应用密钥吗？旧密钥将立即失效！')) return
-    
-    try {
-      await axios.post(`/api/apps/${appId}/regenerate-key`)
-      fetchApps()
-      alert('密钥已重新生成')
-    } catch (error) {
-      console.error('Failed to regenerate key:', error)
-      alert('操作失败')
-    }
+    setApps(apps.map(a => 
+      a.id === appId 
+        ? { ...a, app_key: 'mock-key-' + Math.random().toString(36).substring(7), updated_at: new Date().toISOString() }
+        : a
+    ))
+    alert('密钥已重新生成')
   }
 
   const copyToClipboard = (text, appId) => {
@@ -114,16 +154,10 @@ const AppConfig = () => {
     setTimeout(() => setCopiedKey(null), 2000)
   }
 
-  const toggleAppStatus = async (app) => {
-    try {
-      await axios.put(`/api/apps/${app.id}`, {
-        is_active: !app.is_active
-      })
-      fetchApps()
-    } catch (error) {
-      console.error('Failed to update app:', error)
-      alert('更新失败')
-    }
+  const toggleAppStatus = (app) => {
+    setApps(apps.map(a => 
+      a.id === app.id ? { ...a, is_active: !a.is_active } : a
+    ))
   }
 
   return (

@@ -1,9 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from passlib.context import CryptContext
 from database import Base
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class Admin(Base):
     __tablename__ = "admins"
@@ -15,12 +12,6 @@ class Admin(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
-    
-    def set_password(self, password: str):
-        self.password_hash = pwd_context.hash(password)
-    
-    def verify_password(self, password: str) -> bool:
-        return pwd_context.verify(password, self.password_hash)
     
     def to_dict(self):
         return {

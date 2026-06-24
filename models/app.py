@@ -1,26 +1,19 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
 from database import Base
 
 class App(Base):
     __tablename__ = "apps"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False)
-    app_key = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    app_key = Column(String(100), unique=True, nullable=False, index=True)
     description = Column(String(500))
-    icon_url = Column(String(255))
+    icon_url = Column(String(500))
     is_active = Column(Boolean, default=True)
-    config = Column(JSON)
+    config = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    users = relationship("User", back_populates="app")
-    streamers = relationship("Streamer", back_populates="app")
-    orders = relationship("Order", back_populates="app")
-    payments = relationship("Payment", back_populates="app")
-    activities = relationship("Activity", back_populates="app")
     
     def to_dict(self):
         return {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
+import { USE_MOCK_DATA, API_BASE_URL } from '../config'
 
 const Streamers = () => {
   const [streamers, setStreamers] = useState([])
@@ -13,17 +14,67 @@ const Streamers = () => {
   const [filterActive, setFilterActive] = useState(null)
   const [filterVerified, setFilterVerified] = useState(null)
 
+  const generateMockStreamers = (count) => {
+    return Array.from({ length: count }, (_, i) => ({
+      id: i + 1 + (page - 1) * 20,
+      username: `streamer_${i + 1}`,
+      display_name: `主播 ${i + 1}`,
+      avatar_url: '',
+      bio: `这是主播 ${i + 1} 的个人简介`,
+      is_active: Math.random() > 0.1,
+      is_verified: Math.random() > 0.5,
+      follower_count: Math.floor(Math.random() * 10000) + 100,
+      total_earnings: Math.random() * 10000,
+      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
+    }))
+  }
+
   useEffect(() => {
-    fetchApps()
+    if (USE_MOCK_DATA) {
+      setApps([
+        { id: 1, name: 'ChatStar Live' },
+        { id: 2, name: 'ChatStar Dating' },
+        { id: 3, name: 'ChatStar Gaming' }
+      ])
+    } else {
+      fetchApps()
+    }
   }, [])
 
   useEffect(() => {
-    fetchStreamers()
+    if (USE_MOCK_DATA) {
+      setLoading(true)
+      setTimeout(() => {
+        const mockStreamers = generateMockStreamers(20)
+        let filteredStreamers = mockStreamers
+
+        if (search) {
+          filteredStreamers = filteredStreamers.filter(s => 
+            s.username.includes(search) || 
+            s.display_name.includes(search)
+          )
+        }
+
+        if (filterActive !== null) {
+          filteredStreamers = filteredStreamers.filter(s => s.is_active === filterActive)
+        }
+
+        if (filterVerified !== null) {
+          filteredStreamers = filteredStreamers.filter(s => s.is_verified === filterVerified)
+        }
+
+        setStreamers(filteredStreamers)
+        setTotal(filteredStreamers.length)
+        setLoading(false)
+      }, 300)
+    } else {
+      fetchStreamers()
+    }
   }, [page, search, selectedApp, filterActive, filterVerified])
 
   const fetchApps = async () => {
     try {
-      const response = await axios.get('/api/apps')
+      const response = await axios.get(`${API_BASE_URL}/api/apps`)
       setApps(response.data.apps)
     } catch (error) {
       console.error('Failed to fetch apps:', error)
@@ -41,7 +92,7 @@ const Streamers = () => {
         ...(filterActive !== null && { is_active: filterActive }),
         ...(filterVerified !== null && { is_verified: filterVerified }),
       }
-      const response = await axios.get('/api/streamers', { params })
+      const response = await axios.get(`${API_BASE_URL}/api/streamers`, { params })
       setStreamers(response.data.streamers)
       setTotal(response.data.total)
     } catch (error) {
@@ -56,40 +107,22 @@ const Streamers = () => {
     setPage(1)
   }
 
-  const handleDelete = async (streamerId) => {
+  const handleDelete = (streamerId) => {
     if (!confirm('确定要删除这个主播吗？')) return
-    
-    try {
-      await axios.delete(`/api/streamers/${streamerId}`)
-      fetchStreamers()
-    } catch (error) {
-      console.error('Failed to delete streamer:', error)
-      alert('删除失败')
-    }
+    setStreamers(streamers.filter(s => s.id !== streamerId))
+    setTotal(total - 1)
   }
 
-  const toggleStatus = async (streamer) => {
-    try {
-      await axios.put(`/api/streamers/${streamer.id}`, {
-        is_active: !streamer.is_active
-      })
-      fetchStreamers()
-    } catch (error) {
-      console.error('Failed to update streamer:', error)
-      alert('更新失败')
-    }
+  const toggleStatus = (streamer) => {
+    setStreamers(streamers.map(s => 
+      s.id === streamer.id ? { ...s, is_active: !s.is_active } : s
+    ))
   }
 
-  const toggleVerified = async (streamer) => {
-    try {
-      await axios.put(`/api/streamers/${streamer.id}`, {
-        is_verified: !streamer.is_verified
-      })
-      fetchStreamers()
-    } catch (error) {
-      console.error('Failed to update streamer:', error)
-      alert('更新失败')
-    }
+  const toggleVerified = (streamer) => {
+    setStreamers(streamers.map(s => 
+      s.id === streamer.id ? { ...s, is_verified: !s.is_verified } : s
+    ))
   }
 
   return (

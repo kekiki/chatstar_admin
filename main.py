@@ -13,7 +13,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ChatStar管理后台")
 # 挂载静态文件
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 # 模板目录
 templates = Jinja2Templates(directory="templates")
 

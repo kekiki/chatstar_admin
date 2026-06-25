@@ -10,10 +10,19 @@ class AdminUser(Base):
     password = Column(String(200))
     create_time = Column(DateTime, default=datetime.datetime.now)
 
-# APP应用表
+# APP应用列表
+class AppList(Base):
+    __tablename__ = "app_list"
+    id = Column(Integer, primary_key=True)
+    app_name = Column(String(100))
+    bound_id = Column(String(100), unique=True)
+    is_online = Column(Boolean, default=True)
+
+# APP应用配置
 class AppInfo(Base):
     __tablename__ = "app_info"
     id = Column(Integer, primary_key=True)
+    app_id = Column(Integer, ForeignKey("app_list.id"))
     app_name = Column(String(100))
     app_key = Column(String(100), unique=True)
     status = Column(Boolean, default=True)
@@ -23,7 +32,7 @@ class AppInfo(Base):
 class AppUser(Base):
     __tablename__ = "app_user"
     id = Column(Integer, primary_key=True)
-    app_id = Column(Integer, ForeignKey("app_info.id"))
+    app_id = Column(Integer, ForeignKey("app_list.id"))
     register_time = Column(DateTime)
     last_login = Column(DateTime)
     is_anchor = Column(Boolean, default=False)

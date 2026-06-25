@@ -92,12 +92,6 @@ async def dashboard(request: Request, db: Session = Depends(get_db), _user=Depen
     })
     return HTMLResponse(content)
 
-# @app.get("/admin/user", response_class=HTMLResponse)
-# async def user_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-#     user_list = db.query(models.AppUser).all()
-#     tpl = templates.env.get_template("user_list.html")
-#     content = tpl.render({"request": request, "active_menu": "user", "user_list": user_list})
-#     return HTMLResponse(content)
 @app.get("/admin/user", response_class=HTMLResponse)
 async def user_list(
     request: Request,
@@ -138,12 +132,6 @@ async def user_list(
         "end_date": end_date
     })
 
-# @app.get("/admin/anchor", response_class=HTMLResponse)
-# async def anchor_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-#     anchor_list = db.query(models.Anchor).all()
-#     tpl = templates.env.get_template("anchor_list.html")
-#     content = tpl.render({"request": request, "active_menu": "anchor", "anchor_list": anchor_list})
-#     return HTMLResponse(content)
 @app.get("/admin/anchor", response_class=HTMLResponse)
 async def anchor_list(
     request: Request,
@@ -174,12 +162,6 @@ async def anchor_list(
         "keyword": keyword
     })
 
-# @app.get("/admin/order", response_class=HTMLResponse)
-# async def order_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-#     order_list = db.query(models.PayOrder).all()
-#     tpl = templates.env.get_template("order_list.html")
-#     content = tpl.render({"request": request, "active_menu": "order", "order_list": order_list})
-#     return HTMLResponse(content)
 @app.get("/admin/order", response_class=HTMLResponse)
 async def order_list(
     request: Request,
@@ -276,6 +258,13 @@ async def export_order(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": 'attachment; filename="订单列表.xlsx"'}
     )
+
+@app.get("/admin/app_list", response_class=HTMLResponse)
+async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+    apps = db.query(models.AppInfo).all()
+    tpl = templates.env.get_template("app_list.html")
+    content = tpl.render({"request": request, "active_menu": "app_list", "apps": apps})
+    return HTMLResponse(content)
 
 @app.get("/admin/config", response_class=HTMLResponse)
 async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):

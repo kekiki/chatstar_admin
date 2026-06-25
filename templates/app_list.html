@@ -56,7 +56,16 @@
                     </div>
                     <div class="mb-3">
                         <label>上架状态</label>
-                        <input type="checkbox" name="is_online" value="已上架" checked="checked"/>
+                        <!-- <input type="checkbox" name="is_online" value="已上架" checked="checked"/> -->
+                         <!-- 同组 name 确保互斥 -->
+                        <label class="radio-item">
+                            <input type="radio" name="is_online" value=true checked>
+                            <span>已上架</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="is_online" value=false>
+                            <span>未上架</span>
+                        </label>
                     </div>
                 </form>
             </div>

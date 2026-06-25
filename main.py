@@ -13,7 +13,6 @@ import models
 import json
 from fastapi.responses import StreamingResponse
 import io
-from openpyxl import Workbook
 
 # 创建数据表（首次运行自动建表）
 models.Base.metadata.create_all(bind=engine)

@@ -129,7 +129,7 @@ async def user_list(
         q = q.filter(models.AppUser.register_time <= f"{end_date} 23:59:59")
 
     page_data = paginate_query(db, q, offset, page_size)
-    return templates.TemplateResponse("user_list.html", {
+    return templates.TemplateResponse(request, "user_list.html", {
         "request": request,
         "active_menu": "user",
         "page_data": page_data,
@@ -167,7 +167,7 @@ async def anchor_list(
         )
 
     page_data = paginate_query(db, q, offset, page_size)
-    return templates.TemplateResponse("anchor_list.html", {
+    return templates.TemplateResponse(request, "anchor_list.html", {
         "request": request,
         "active_menu": "anchor",
         "page_data": page_data,
@@ -216,7 +216,7 @@ async def order_list(
         q = q.filter(models.PayOrder.status == status)
 
     page_data = paginate_query(db, q, offset, page_size)
-    return templates.TemplateResponse("order_list.html", {
+    return templates.TemplateResponse(request, "order_list.html", {
         "request": request,
         "active_menu": "order",
         "page_data": page_data,

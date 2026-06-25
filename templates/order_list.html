@@ -2,10 +2,34 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>付费订单列表</h2>
-    <div class="d-flex gap-2">
-        <input class="form-control w-auto" id="searchOrder" placeholder="订单ID/用户ID">
-    </div>
+    <a class="btn btn-success" href="/admin/order/export?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}">导出Excel</a>
 </div>
+<form action="/admin/order" method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-auto">
+        <label>全局关键词</label>
+        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="订单ID/用户ID/金额">
+    </div>
+    <div class="col-auto">
+        <label>支付起始日期</label>
+        <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+    </div>
+    <div class="col-auto">
+        <label>支付结束日期</label>
+        <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+    </div>
+    <div class="col-auto">
+        <label>订单状态</label>
+        <select class="form-select" name="status">
+            <option value="-1" {% if status == -1 %}selected{% endif %}>全部</option>
+            <option value="1" {% if status == 1 %}selected{% endif %}>已支付</option>
+            <option value="0" {% if status == 0 %}selected{% endif %}>未支付</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary">查询</button>
+        <a href="/admin/order" class="btn btn-outline-secondary">重置</a>
+    </div>
+</form>
 <hr>
 <div class="card">
     <div class="table-responsive">
@@ -21,7 +45,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in order_list %}
+                {% for item in page_data.list %}
                 <tr>
                     <td>{{ item.id }}</td>
                     <td>{{ item.app_id }}</td>
@@ -40,14 +64,18 @@
             </tbody>
         </table>
     </div>
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_page }} 页</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/order?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}&page={{ page_data.page-1 }}">上一页</a>
+                </li>
+                <li class="page-item {% if page_data.page == page_data.total_page %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/order?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}&page={{ page_data.page+1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>
-<script>
-$("#searchOrder").on("input", function(){
-    let val = $(this).val().toLowerCase();
-    $("tbody tr").each(function(){
-        let text = $(this).text().toLowerCase();
-        $(this).toggle(text.includes(val));
-    })
-})
-</script>
 {% endblock %}

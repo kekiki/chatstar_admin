@@ -3,12 +3,17 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from tools import get_page_params, paginate_query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import Optional
 import auth
 from database import get_db, engine
 import models
 import json
+from fastapi.responses import StreamingResponse
+import io
+from openpyxl import Workbook
 
 # 创建数据表（首次运行自动建表）
 models.Base.metadata.create_all(bind=engine)
@@ -88,26 +93,190 @@ async def dashboard(request: Request, db: Session = Depends(get_db), _user=Depen
     })
     return HTMLResponse(content)
 
+# @app.get("/admin/user", response_class=HTMLResponse)
+# async def user_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+#     user_list = db.query(models.AppUser).all()
+#     tpl = templates.env.get_template("user_list.html")
+#     content = tpl.render({"request": request, "active_menu": "user", "user_list": user_list})
+#     return HTMLResponse(content)
 @app.get("/admin/user", response_class=HTMLResponse)
-async def user_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-    user_list = db.query(models.AppUser).all()
-    tpl = templates.env.get_template("user_list.html")
-    content = tpl.render({"request": request, "active_menu": "user", "user_list": user_list})
-    return HTMLResponse(content)
+async def user_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1),
+    page_size: int = Query(10),
+    keyword: str = Query("", description="全字段模糊搜索"),
+    start_date: str = Query(""),
+    end_date: str = Query(""),
+    _user=Depends(require_login)
+):
+    page, page_size, offset = get_page_params(page, page_size)
+    q = db.query(models.AppUser)
 
+    # 全字段模糊匹配
+    if keyword:
+        q = q.filter(
+            or_(
+                models.AppUser.id.like(f"%{keyword}%"),
+                models.AppUser.app_id.like(f"%{keyword}%"),
+                models.AppUser.register_time.like(f"%{keyword}%"),
+                models.AppUser.last_login.like(f"%{keyword}%")
+            )
+        )
+    # 注册时间区间筛选
+    if start_date:
+        q = q.filter(models.AppUser.register_time >= start_date)
+    if end_date:
+        q = q.filter(models.AppUser.register_time <= f"{end_date} 23:59:59")
+
+    page_data = paginate_query(db, q, offset, page_size)
+    return templates.TemplateResponse("user_list.html", {
+        "request": request,
+        "active_menu": "user",
+        "page_data": page_data,
+        "keyword": keyword,
+        "start_date": start_date,
+        "end_date": end_date
+    })
+
+# @app.get("/admin/anchor", response_class=HTMLResponse)
+# async def anchor_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+#     anchor_list = db.query(models.Anchor).all()
+#     tpl = templates.env.get_template("anchor_list.html")
+#     content = tpl.render({"request": request, "active_menu": "anchor", "anchor_list": anchor_list})
+#     return HTMLResponse(content)
 @app.get("/admin/anchor", response_class=HTMLResponse)
-async def anchor_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-    anchor_list = db.query(models.Anchor).all()
-    tpl = templates.env.get_template("anchor_list.html")
-    content = tpl.render({"request": request, "active_menu": "anchor", "anchor_list": anchor_list})
-    return HTMLResponse(content)
+async def anchor_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1),
+    page_size: int = Query(10),
+    keyword: str = Query("", description="全字段模糊搜索"),
+    _user=Depends(require_login)
+):
+    page, page_size, offset = get_page_params(page, page_size)
+    q = db.query(models.Anchor)
 
+    if keyword:
+        q = q.filter(
+            or_(
+                models.Anchor.id.like(f"%{keyword}%"),
+                models.Anchor.user_id.like(f"%{keyword}%"),
+                models.Anchor.nickname.like(f"%{keyword}%"),
+                models.Anchor.income.like(f"%{keyword}%")
+            )
+        )
+
+    page_data = paginate_query(db, q, offset, page_size)
+    return templates.TemplateResponse("anchor_list.html", {
+        "request": request,
+        "active_menu": "anchor",
+        "page_data": page_data,
+        "keyword": keyword
+    })
+
+# @app.get("/admin/order", response_class=HTMLResponse)
+# async def order_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
+#     order_list = db.query(models.PayOrder).all()
+#     tpl = templates.env.get_template("order_list.html")
+#     content = tpl.render({"request": request, "active_menu": "order", "order_list": order_list})
+#     return HTMLResponse(content)
 @app.get("/admin/order", response_class=HTMLResponse)
-async def order_list(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-    order_list = db.query(models.PayOrder).all()
-    tpl = templates.env.get_template("order_list.html")
-    content = tpl.render({"request": request, "active_menu": "order", "order_list": order_list})
-    return HTMLResponse(content)
+async def order_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1),
+    page_size: int = Query(10),
+    keyword: str = Query("", description="全字段模糊搜索"),
+    start_date: str = Query(""),
+    end_date: str = Query(""),
+    status: int = Query(-1),
+    _user=Depends(require_login)
+):
+    page, page_size, offset = get_page_params(page, page_size)
+    q = db.query(models.PayOrder)
+
+    # 全字段模糊
+    if keyword:
+        q = q.filter(
+            or_(
+                models.PayOrder.id.like(f"%{keyword}%"),
+                models.PayOrder.app_id.like(f"%{keyword}%"),
+                models.PayOrder.user_id.like(f"%{keyword}%"),
+                models.PayOrder.pay_amount.like(f"%{keyword}%"),
+                models.PayOrder.pay_time.like(f"%{keyword}%")
+            )
+        )
+    # 支付时间区间
+    if start_date:
+        q = q.filter(models.PayOrder.pay_time >= start_date)
+    if end_date:
+        q = q.filter(models.PayOrder.pay_time <= f"{end_date} 23:59:59")
+    # 订单状态
+    if status in (0, 1):
+        q = q.filter(models.PayOrder.status == status)
+
+    page_data = paginate_query(db, q, offset, page_size)
+    return templates.TemplateResponse("order_list.html", {
+        "request": request,
+        "active_menu": "order",
+        "page_data": page_data,
+        "keyword": keyword,
+        "start_date": start_date,
+        "end_date": end_date,
+        "status": status
+    })
+
+@app.get("/admin/order/export")
+async def export_order(
+    db: Session = Depends(get_db),
+    keyword: str = Query(""),
+    start_date: str = Query(""),
+    end_date: str = Query(""),
+    status: int = Query(-1),
+    _user=Depends(require_login)
+):
+    q = db.query(models.PayOrder)
+    if keyword:
+        q = q.filter(
+            or_(
+                models.PayOrder.id.like(f"%{keyword}%"),
+                models.PayOrder.app_id.like(f"%{keyword}%"),
+                models.PayOrder.user_id.like(f"%{keyword}%"),
+                models.PayOrder.pay_amount.like(f"%{keyword}%"),
+                models.PayOrder.pay_time.like(f"%{keyword}%")
+            )
+        )
+    if start_date:
+        q = q.filter(models.PayOrder.pay_time >= start_date)
+    if end_date:
+        q = q.filter(models.PayOrder.pay_time <= f"{end_date} 23:59:59")
+    if status in (0, 1):
+        q = q.filter(models.PayOrder.status == status)
+    order_list = q.all()
+
+    from openpyxl import Workbook
+    import io
+    from fastapi.responses import StreamingResponse
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "订单数据"
+    header = ["订单ID", "应用ID", "用户ID", "支付金额", "支付时间", "订单状态"]
+    ws.append(header)
+    for od in order_list:
+        stat_text = "已支付" if od.status == 1 else "未支付"
+        row = [od.id, od.app_id, od.user_id, od.pay_amount, od.pay_time, stat_text]
+        ws.append(row)
+
+    stream = io.BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return StreamingResponse(
+        io.BytesIO(stream.read()),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="订单列表.xlsx"'}
+    )
 
 @app.get("/admin/config", response_class=HTMLResponse)
 async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):

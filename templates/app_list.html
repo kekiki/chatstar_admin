@@ -26,7 +26,7 @@
                         {% if app.is_online %}
                         <span class="badge bg-success">已上架</span>
                         {% else %}
-                        <span class="badge bg-secondary">已下架</span>
+                        <span class="badge bg-secondary">未上架</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -56,7 +56,7 @@
                     </div>
                     <div class="mb-3">
                         <label>上架状态</label>
-                        <textarea name="is_online" class="form-control" rows="5">{"pay_rate":0.3,"ad_switch":true}</textarea>
+                        <input type="checkbox" name="is_online" value="已上架" checked="checked" class="form-control"/>
                     </div>
                 </form>
             </div>

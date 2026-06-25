@@ -261,16 +261,16 @@ async def export_order(
 
 @app.get("/admin/app_list", response_class=HTMLResponse)
 async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
-    apps = db.query(models.AppInfo).all()
+    apps = db.query(models.AppList).all()
     tpl = templates.env.get_template("app_list.html")
     content = tpl.render({"request": request, "active_menu": "app_list", "apps": apps})
     return HTMLResponse(content)
 
-@app.get("/admin/config", response_class=HTMLResponse)
+@app.get("/admin/app_config", response_class=HTMLResponse)
 async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)):
     apps = db.query(models.AppInfo).all()
     tpl = templates.env.get_template("app_config.html")
-    content = tpl.render({"request": request, "active_menu": "config", "apps": apps})
+    content = tpl.render({"request": request, "active_menu": "app_config", "apps": apps})
     return HTMLResponse(content)
 
 # 新增应用接口

@@ -14,6 +14,7 @@
                     <th>应用名称</th>
                     <th>包名</th>
                     <th>上架状态</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,6 +29,10 @@
                         {% else %}
                         <span class="badge bg-secondary">未上架</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="{{ app.id }}" data-name="{{ app.app_name }}" data-bound_id="{{ app.bound_id }}" data-online="{{ 'true' if app.is_online else 'false' }}">编辑</button>
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="{{ app.id }}">删除</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -76,6 +81,46 @@
     </div>
 </div>
 
+<!-- 编辑应用弹窗 -->
+<div class="modal fade" id="editAppModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑APP应用</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAppForm">
+                    <input type="hidden" name="id">
+                    <div class="mb-3">
+                        <label>应用名称</label>
+                        <input type="text" name="app_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>包名（唯一标识）</label>
+                        <input type="text" name="bound_id" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <p><label>上架状态</label></p>
+                        <label class="radio-item">
+                            <input type="radio" name="is_online" value="true">
+                            <span>已上架</span>
+                        </label>
+                        &emsp;
+                        <label class="radio-item">
+                            <input type="radio" name="is_online" value="false">
+                            <span>未上架</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditApp">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- 查看弹窗 -->
 <div class="modal fade" id="configModal" tabindex="-1">
@@ -100,6 +145,51 @@ $(".view-config").click(function(){
     $("#configText").text(JSON.stringify(JSON.parse(cfg), null, 2));
     new bootstrap.Modal("#configModal").show();
 })
+
+function openEditModal(app) {
+    const modal = new bootstrap.Modal(document.getElementById('editAppModal'));
+    const form = $("#editAppForm");
+    form.find("[name=id]").val(app.id);
+    form.find("[name=app_name]").val(app.app_name);
+    form.find("[name=bound_id]").val(app.bound_id);
+    form.find("[name=is_online][value=" + app.is_online + "]").prop("checked", true);
+    modal.show();
+}
+
+// 编辑按钮
+$(document).on('click', '.btn-edit', function(){
+    const button = $(this);
+    openEditModal({
+        id: button.data('id'),
+        app_name: button.data('name'),
+        bound_id: button.data('bound_id'),
+        is_online: button.data('online')
+    });
+});
+
+// 删除应用
+$(document).on('click', '.btn-delete', async function(){
+    const id = $(this).data('id');
+    if (!confirm('确认删除该应用吗？')) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/admin/api/delete_app_list?id=${id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || '删除失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('删除失败，请稍后重试。');
+    }
+});
 
 // 新增应用提交
 $("#submitAddApp").click(async function(){
@@ -130,6 +220,38 @@ $("#submitAddApp").click(async function(){
         console.error(error);
         alert("保存失败，请稍后重试。");
     }
-})
+});
+
+// 编辑应用提交
+$("#submitEditApp").click(async function(){
+    const form = $("#editAppForm");
+    const id = form.find("[name=id]").val();
+    const app_name = form.find("[name=app_name]").val();
+    const bound_id = form.find("[name=bound_id]").val();
+    const is_online = form.find("[name=is_online]:checked").val() === "true";
+
+    if (!id || !app_name || !bound_id) {
+        alert("请填写完整的应用信息。");
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/api/update_app_list", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id: Number(id), app_name, bound_id, is_online})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || "更新失败，请检查输入。");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("更新失败，请稍后重试。");
+    }
+});
 </script>
 {% endblock %}

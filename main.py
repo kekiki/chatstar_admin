@@ -326,6 +326,50 @@ async def add_app_list(
         }
     }
 
+@app.put("/admin/api/update_app_list")
+async def update_app_list(
+    id: int = Body(...),
+    app_name: str = Body(...),
+    bound_id: str = Body(...),
+    is_online: bool = Body(...),
+    db: Session = Depends(get_db),
+    _user = Depends(require_login)
+):
+    app_item = db.query(models.AppList).filter(models.AppList.id == id).first()
+    if not app_item:
+        return {"code": 404, "msg": "应用不存在"}
+    duplicate = db.query(models.AppList).filter(models.AppList.bound_id == bound_id, models.AppList.id != id).first()
+    if duplicate:
+        return {"code": 400, "msg": "包名已存在"}
+    app_item.app_name = app_name
+    app_item.bound_id = bound_id
+    app_item.is_online = is_online
+    db.commit()
+    db.refresh(app_item)
+    return {
+        "code": 200,
+        "msg": "更新成功",
+        "app": {
+            "id": app_item.id,
+            "app_name": app_item.app_name,
+            "bound_id": app_item.bound_id,
+            "is_online": app_item.is_online,
+        }
+    }
+
+@app.delete("/admin/api/delete_app_list")
+async def delete_app_list(
+    id: int = Query(...),
+    db: Session = Depends(get_db),
+    _user = Depends(require_login)
+):
+    app_item = db.query(models.AppList).filter(models.AppList.id == id).first()
+    if not app_item:
+        return {"code": 404, "msg": "应用不存在"}
+    db.delete(app_item)
+    db.commit()
+    return {"code": 200, "msg": "删除成功"}
+
 # 首页自动跳转看板
 @app.get("/admin")
 async def admin_index():

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Body
+from fastapi import APIRouter, Request, Depends, Body, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session

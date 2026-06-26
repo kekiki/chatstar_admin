@@ -1,8 +1,8 @@
-from database import SessionLocal, engine
+from database import SessionLocal, engine, Base
 import models
 import auth
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 # 创建管理员
 hash_pwd = auth.get_password_hash("123456")

@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from database import get_db, engine
+from database import get_db, engine, Base
 import models
 from routers import auth_router, dashboard_router, user_router, anchor_router, order_router, app_router
 
 # 创建数据表（首次运行自动建表）
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ChatStar管理后台")
 app.add_middleware(

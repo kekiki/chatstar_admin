@@ -4,7 +4,7 @@ from database import Base
 class PayOrder(Base):
     __tablename__ = "pay_order"
     id = Column(Integer, primary_key=True)
-    app_id = Column(Integer, ForeignKey("app_info.id"))
+    app_id = Column(Integer, ForeignKey("app_config.id"))
     user_id = Column(Integer)
     pay_amount = Column(Float)
     pay_time = Column(DateTime)

@@ -19,6 +19,7 @@ async def app_list(request: Request, db: Session = Depends(get_db), _user=Depend
 
 @router.post("/admin/api/add_app_list")
 async def add_app_list(
+    request: Request,
     app_name: str = Body(...),
     bound_id: str = Body(...),
     is_online: bool = Body(...),
@@ -26,8 +27,7 @@ async def add_app_list(
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     exist = db.query(models.AppList).filter(models.AppList.bound_id == bound_id).first()
     if exist:
         return {"code": 400, "msg": "包名已存在"}
@@ -52,6 +52,7 @@ async def add_app_list(
 
 @router.put("/admin/api/update_app_list")
 async def update_app_list(
+    request: Request,
     id: int = Body(...),
     app_name: str = Body(...),
     bound_id: str = Body(...),
@@ -60,8 +61,7 @@ async def update_app_list(
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     app_item = db.query(models.AppList).filter(models.AppList.id == id).first()
     if not app_item:
         return {"code": 404, "msg": "应用不存在"}
@@ -86,13 +86,13 @@ async def update_app_list(
 
 @router.delete("/admin/api/delete_app_list")
 async def delete_app_list(
+    request: Request,
     id: int = Query(...),
     db: Session = Depends(get_db),
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     app_item = db.query(models.AppList).filter(models.AppList.id == id).first()
     if not app_item:
         return {"code": 404, "msg": "应用不存在"}

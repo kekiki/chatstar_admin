@@ -21,6 +21,7 @@ async def app_config(request: Request, db: Session = Depends(get_db), _user=Depe
 
 @router.post("/admin/api/add_app_config")
 async def add_app_config(
+    request: Request,
     app_id: int = Body(...),
     app_version: str = Body(...),
     config_json: str = Body(...),
@@ -29,8 +30,7 @@ async def add_app_config(
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     new_app = models.AppConfig(
         app_id=app_id,
         app_version=app_version,
@@ -54,6 +54,7 @@ async def add_app_config(
 
 @router.put("/admin/api/update_app_config")
 async def update_app_config(
+    request: Request,
     id: int = Body(...),
     app_version: str = Body(...),
     config_json: str = Body(...),
@@ -62,8 +63,7 @@ async def update_app_config(
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     config_item = db.query(models.AppConfig).filter(models.AppConfig.id == id).first()
     if not config_item:
         return {"code": 404, "msg": "配置不存在"}
@@ -86,13 +86,13 @@ async def update_app_config(
 
 @router.delete("/admin/api/delete_app_config")
 async def delete_app_config(
+    request: Request,
     id: int = Query(...),
     db: Session = Depends(get_db),
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     config_item = db.query(models.AppConfig).filter(models.AppConfig.id == id).first()
     if not config_item:
         return {"code": 404, "msg": "配置不存在"}

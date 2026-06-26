@@ -58,6 +58,7 @@ async def order_list(
 
 @router.get("/admin/order/export")
 async def export_order(
+    request: Request,
     db: Session = Depends(get_db),
     keyword: str = Query(""),
     start_date: str = Query(""),
@@ -66,8 +67,7 @@ async def export_order(
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
+    _user = require_login(request, db)
     q = db.query(models.PayOrder)
     if keyword:
         q = q.filter(

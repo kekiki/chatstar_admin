@@ -13,7 +13,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db), _user=Depen
     from routers.auth import require_login
     _user = require_login(request, db)
     stat_list = db.query(models.DailyStat).order_by(models.DailyStat.stat_date).all()
-    app_list = db.query(models.AppInfo).all()
+    app_list = db.query(models.AppList).all()
     tpl = templates.env.get_template("dashboard.html")
     content = tpl.render({
         "request": request,

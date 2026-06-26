@@ -15,7 +15,7 @@ class AppList(Base):
     __tablename__ = "app_list"
     id = Column(Integer, primary_key=True)
     app_name = Column(String(100))
-    bound_id = Column(String(100), unique=True)
+    bound_id = Column(String(100))
     is_online = Column(Boolean, default=True)
 
 # APP应用配置

@@ -273,7 +273,7 @@ async def app_config(request: Request, db: Session = Depends(get_db), _user=Depe
     content = tpl.render({"request": request, "active_menu": "app_config", "apps": apps})
     return HTMLResponse(content)
 
-# 新增应用接口
+# 新增应用接口（AppInfo）
 @app.post("/admin/api/add_app")
 async def add_app(
     app_name: str = Body(),
@@ -294,6 +294,37 @@ async def add_app(
     db.add(new_app)
     db.commit()
     return {"code": 200, "msg": "新增成功"}
+
+# 新增应用接口（AppList）
+@app.post("/admin/api/add_app_list")
+async def add_app_list(
+    app_name: str = Body(...),
+    bound_id: str = Body(...),
+    is_online: bool = Body(...),
+    db: Session = Depends(get_db),
+    _user = Depends(require_login)
+):
+    exist = db.query(models.AppList).filter(models.AppList.bound_id == bound_id).first()
+    if exist:
+        return {"code": 400, "msg": "包名已存在"}
+    new_app = models.AppList(
+        app_name=app_name,
+        bound_id=bound_id,
+        is_online=is_online
+    )
+    db.add(new_app)
+    db.commit()
+    db.refresh(new_app)
+    return {
+        "code": 200,
+        "msg": "新增成功",
+        "app": {
+            "id": new_app.id,
+            "app_name": new_app.app_name,
+            "bound_id": new_app.bound_id,
+            "is_online": new_app.is_online,
+        }
+    }
 
 # 首页自动跳转看板
 @app.get("/admin")

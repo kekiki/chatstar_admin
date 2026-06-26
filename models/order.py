@@ -2,10 +2,14 @@ from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey
 from database import Base
 
 class PayOrder(Base):
-    __tablename__ = "pay_order"
-    id = Column(Integer, primary_key=True)
-    app_id = Column(Integer, ForeignKey("app_config.id"))
-    user_id = Column(Integer)
-    pay_amount = Column(Float)
-    pay_time = Column(DateTime)
-    status = Column(Integer) # 0未支付 1已支付
+    __tablename__ = "pay_orders"
+    id = Column(Integer, primary_key=True, index=True)
+    app_id = Column(Integer, ForeignKey("app_list.id"), index=True)
+    user_id = Column(Integer, index=True)
+    order_no = Column(String, index=True)
+    created_time = Column(Integer)
+    sku = Column(String)
+    discount_type = Column(Integer, default=0) # 0普通折扣 1首充折扣
+    order_status = Column(Integer, default=0) # 0待支付 1支付成功 2支付失败
+    currency_code = Column(String, default="USD")
+    currency_price = Column(Integer, default=0)

@@ -3,7 +3,7 @@ from database import Base
 import datetime
 
 class AppUser(Base):
-    __tablename__ = "app_user"
+    __tablename__ = "app_users"
     id = Column(Integer, primary_key=True, index=True)
     device_id = Column(String(64), index=True)
     app_id = Column(Integer, default=0)

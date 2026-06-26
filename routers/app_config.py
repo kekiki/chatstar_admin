@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import get_db
+from tools import get_page_params, paginate_query
 import models
 
 router = APIRouter()
@@ -10,14 +11,37 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/admin/app_config", response_class=HTMLResponse)
-async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(lambda: None)):
+async def app_config(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1),
+    page_size: int = Query(10),
+    app_id: int = Query(None, description="应用ID筛选"),
+    app_version: str = Query("", description="版本号筛选"),
+    _user=Depends(lambda: None)
+):
     from routers.auth import require_login
     _user = require_login(request, db)
     apps = db.query(models.AppList).all()
-    configs = db.query(models.AppConfig).all()
-    tpl = templates.env.get_template("app_config.html")
-    content = tpl.render({"request": request, "active_menu": "app_config", "apps": apps, "configs": configs})
-    return HTMLResponse(content)
+    
+    page, page_size, offset = get_page_params(page, page_size)
+    q = db.query(models.AppConfig)
+    
+    if app_id:
+        q = q.filter(models.AppConfig.app_id == app_id)
+    if app_version:
+        q = q.filter(models.AppConfig.app_version.like(f"%{app_version}%"))
+    
+    page_data = paginate_query(db, q, offset, page_size)
+    
+    return templates.TemplateResponse(request, "app_config.html", {
+        "request": request,
+        "active_menu": "app_config",
+        "apps": apps,
+        "page_data": page_data,
+        "app_id": app_id,
+        "app_version": app_version
+    })
 
 @router.post("/admin/api/add_app_config")
 async def add_app_config(

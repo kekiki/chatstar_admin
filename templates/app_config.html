@@ -46,7 +46,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for config in page_data.items %}
+                {% for config in page_data.list %}
                 <tr>
                     <td>{{ config.id }}</td>
                     <td>
@@ -67,7 +67,7 @@
                     </td>
                 </tr>
                 {% endfor %}
-                {% if not page_data.items %}
+                {% if not page_data['list'] %}
                 <tr>
                     <td colspan="6" class="text-center">暂无数据</td>
                 </tr>

@@ -13,7 +13,7 @@ def paginate_query(db: Session, query, offset, page_size):
     data = query.limit(page_size).offset(offset).all()
     total_page = (total + page_size - 1) // page_size
     return {
-        "items": data,
+        "list": data,
         "page": offset // page_size + 1,
         "page_size": page_size,
         "total": total,

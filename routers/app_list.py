@@ -21,19 +21,19 @@ async def app_list(request: Request, db: Session = Depends(get_db), _user=Depend
 async def add_app_list(
     request: Request,
     app_name: str = Body(...),
-    bound_id: str = Body(...),
+    package_name: str = Body(...),
     is_online: bool = Body(...),
     db: Session = Depends(get_db),
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    exist = db.query(models.AppList).filter(models.AppList.bound_id == bound_id).first()
+    exist = db.query(models.AppList).filter(models.AppList.package_name == package_name).first()
     if exist:
         return {"code": 400, "msg": "包名已存在"}
     new_app = models.AppList(
         app_name=app_name,
-        bound_id=bound_id,
+        package_name=package_name,
         is_online=is_online
     )
     db.add(new_app)
@@ -45,7 +45,7 @@ async def add_app_list(
         "app": {
             "id": new_app.id,
             "app_name": new_app.app_name,
-            "bound_id": new_app.bound_id,
+            "package_name": new_app.package_name,
             "is_online": new_app.is_online,
         }
     }
@@ -55,7 +55,7 @@ async def update_app_list(
     request: Request,
     id: int = Body(...),
     app_name: str = Body(...),
-    bound_id: str = Body(...),
+    package_name: str = Body(...),
     is_online: bool = Body(...),
     db: Session = Depends(get_db),
     _user = Depends(lambda: None)
@@ -65,11 +65,11 @@ async def update_app_list(
     app_item = db.query(models.AppList).filter(models.AppList.id == id).first()
     if not app_item:
         return {"code": 404, "msg": "应用不存在"}
-    duplicate = db.query(models.AppList).filter(models.AppList.bound_id == bound_id, models.AppList.id != id).first()
+    duplicate = db.query(models.AppList).filter(models.AppList.package_name == package_name, models.AppList.id != id).first()
     if duplicate:
         return {"code": 400, "msg": "包名已存在"}
     app_item.app_name = app_name
-    app_item.bound_id = bound_id
+    app_item.package_name = package_name
     app_item.is_online = is_online
     db.commit()
     db.refresh(app_item)
@@ -79,7 +79,7 @@ async def update_app_list(
         "app": {
             "id": app_item.id,
             "app_name": app_item.app_name,
-            "bound_id": app_item.bound_id,
+            "package_name": app_item.package_name,
             "is_online": app_item.is_online,
         }
     }

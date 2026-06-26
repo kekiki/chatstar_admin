@@ -22,7 +22,7 @@
                 <tr>
                     <td>{{ app.id }}</td>
                     <td>{{ app.app_name }}</td>
-                    <td>{{ app.bound_id }}</td>
+                    <td>{{ app.package_name }}</td>
                     <td>
                         {% if app.is_online %}
                         <span class="badge bg-success">已上架</span>
@@ -31,7 +31,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="{{ app.id }}" data-name="{{ app.app_name }}" data-bound_id="{{ app.bound_id }}" data-online="{{ 'true' if app.is_online else 'false' }}">编辑</button>
+                        <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="{{ app.id }}" data-name="{{ app.app_name }}" data-package_name="{{ app.package_name }}" data-online="{{ 'true' if app.is_online else 'false' }}">编辑</button>
                         <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="{{ app.id }}">删除</button>
                     </td>
                 </tr>
@@ -57,7 +57,7 @@
                     </div>
                     <div class="mb-3">
                         <label>包名（唯一标识）</label>
-                        <input type="text" name="bound_id" class="form-control" required>
+                        <input type="text" name="package_name" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <p><label>上架状态</label></p>
@@ -98,7 +98,7 @@
                     </div>
                     <div class="mb-3">
                         <label>包名（唯一标识）</label>
-                        <input type="text" name="bound_id" class="form-control" required>
+                        <input type="text" name="package_name" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <p><label>上架状态</label></p>
@@ -151,7 +151,7 @@ function openEditModal(app) {
     const form = $("#editAppForm");
     form.find("[name=id]").val(app.id);
     form.find("[name=app_name]").val(app.app_name);
-    form.find("[name=bound_id]").val(app.bound_id);
+    form.find("[name=package_name]").val(app.package_name);
     form.find("[name=is_online][value=" + app.is_online + "]").prop("checked", true);
     modal.show();
 }
@@ -162,7 +162,7 @@ $(document).on('click', '.btn-edit', function(){
     openEditModal({
         id: button.data('id'),
         app_name: button.data('name'),
-        bound_id: button.data('bound_id'),
+        package_name: button.data('package_name'),
         is_online: button.data('online')
     });
 });
@@ -195,10 +195,10 @@ $(document).on('click', '.btn-delete', async function(){
 $("#submitAddApp").click(async function(){
     const form = $("#addAppForm");
     const app_name = form.find("[name=app_name]").val();
-    const bound_id = form.find("[name=bound_id]").val();
+    const package_name = form.find("[name=package_name]").val();
     const is_online = form.find("[name=is_online]:checked").val() === "true";
 
-    if (!app_name || !bound_id) {
+    if (!app_name || !package_name) {
         alert("请填写应用名称和包名。");
         return;
     }
@@ -207,7 +207,7 @@ $("#submitAddApp").click(async function(){
         const res = await fetch("/admin/api/add_app_list", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({app_name, bound_id, is_online})
+            body: JSON.stringify({app_name, package_name, is_online})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
@@ -227,10 +227,10 @@ $("#submitEditApp").click(async function(){
     const form = $("#editAppForm");
     const id = form.find("[name=id]").val();
     const app_name = form.find("[name=app_name]").val();
-    const bound_id = form.find("[name=bound_id]").val();
+    const package_name = form.find("[name=package_name]").val();
     const is_online = form.find("[name=is_online]:checked").val() === "true";
 
-    if (!id || !app_name || !bound_id) {
+    if (!id || !app_name || !package_name) {
         alert("请填写完整的应用信息。");
         return;
     }
@@ -239,7 +239,7 @@ $("#submitEditApp").click(async function(){
         const res = await fetch("/admin/api/update_app_list", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id: Number(id), app_name, bound_id, is_online})
+            body: JSON.stringify({id: Number(id), app_name, package_name, is_online})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {

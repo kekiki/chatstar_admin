@@ -138,7 +138,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ### AppList (应用列表)
 - id: 主键
 - app_name: 应用名称
-- bound_id: 包名
+- package_name: 包名
 - is_online: 是否上线
 
 ### AppInfo (应用配置)

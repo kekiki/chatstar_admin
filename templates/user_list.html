@@ -40,7 +40,7 @@
                     <td>
                         {% for app in apps %}
                         {% if app.id == item.app_id %}
-                        {{ app.app_name }} ({{ app.bound_id }})
+                        {{ app.app_name }} ({{ app.package_name }})
                         {% endif %}
                         {% endfor %}
                         {% if item.app_id == 0 %}无{% endif %}

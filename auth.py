@@ -1,11 +1,7 @@
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-
-# 密钥自行修改
-SECRET_KEY = "your-secret-key-admin-2026"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 7
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_DAYS
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

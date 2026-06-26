@@ -17,39 +17,6 @@ async def app_list(request: Request, db: Session = Depends(get_db), _user=Depend
     content = tpl.render({"request": request, "active_menu": "app_list", "apps": apps})
     return HTMLResponse(content)
 
-@router.get("/admin/app_config", response_class=HTMLResponse)
-async def app_config(request: Request, db: Session = Depends(get_db), _user=Depends(lambda: None)):
-    from routers.auth import require_login
-    _user = require_login(request, db)
-    apps = db.query(models.AppInfo).all()
-    tpl = templates.env.get_template("app_config.html")
-    content = tpl.render({"request": request, "active_menu": "app_config", "apps": apps})
-    return HTMLResponse(content)
-
-@router.post("/admin/api/add_app")
-async def add_app(
-    app_name: str = Body(),
-    app_key: str = Body(),
-    config_json: str = Body(),
-    db: Session = Depends(get_db),
-    _user = Depends(lambda: None)
-):
-    from routers.auth import require_login
-    from fastapi import Request
-    _user = require_login(Request, db)
-    exist = db.query(models.AppInfo).filter(models.AppInfo.app_key == app_key).first()
-    if exist:
-        return {"code": 400, "msg": "AppKey已存在"}
-    new_app = models.AppInfo(
-        app_name=app_name,
-        app_key=app_key,
-        config_json=config_json,
-        status=True
-    )
-    db.add(new_app)
-    db.commit()
-    return {"code": 200, "msg": "新增成功"}
-
 @router.post("/admin/api/add_app_list")
 async def add_app_list(
     app_name: str = Body(...),

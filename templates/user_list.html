@@ -6,15 +6,7 @@
 <form action="/admin/user" method="get" class="row g-3 mb-4 align-items-end">
     <div class="col-auto">
         <label>全局关键词</label>
-        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="ID/应用ID/时间">
-    </div>
-    <div class="col-auto">
-        <label>注册起始日期</label>
-        <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
-    </div>
-    <div class="col-auto">
-        <label>注册结束日期</label>
-        <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="ID/设备ID/应用ID/昵称/邮箱">
     </div>
     <div class="col-auto">
         <button class="btn btn-primary">查询</button>
@@ -28,25 +20,73 @@
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
-                    <th>所属应用ID</th>
+                    <th>所属应用</th>
+                    <th>头像</th>
+                    <th>昵称</th>
+                    <th>国家</th>
+                    <th>IP</th>
+                    <th>语言</th>
+                    <th>余额</th>
+                    <th>VIP</th>
+                    <th>审核账户</th>
                     <th>注册时间</th>
-                    <th>最后登录</th>
-                    <th>是否主播</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
                     <td>{{ item.id }}</td>
-                    <td>{{ item.app_id }}</td>
-                    <td>{{ item.register_time }}</td>
-                    <td>{{ item.last_login }}</td>
                     <td>
-                        {% if item.is_anchor %}
+                        {% for app in apps %}
+                        {% if app.id == item.app_id %}
+                        {{ app.app_name }} ({{ app.bound_id }})
+                        {% endif %}
+                        {% endfor %}
+                        {% if item.app_id == 0 %}无{% endif %}
+                    </td>
+                    <td>
+                        {% if item.avatar %}
+                        <img src="{{ item.avatar }}" alt="头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        {% else %}
+                        <span class="text-muted">无</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.nickname or '-' }}</td>
+                    <td>{{ item.country or '-' }}</td>
+                    <td>{{ item.ip or '-' }}</td>
+                    <td>{{ item.language_name or '-' }}</td>
+                    <td>{{ item.balance }}</td>
+                    <td>
+                        {% if item.is_vip %}
                         <span class="badge bg-success">是</span>
                         {% else %}
                         <span class="badge bg-secondary">否</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        {% if item.is_check %}
+                        <span class="badge bg-success">是</span>
+                        {% else %}
+                        <span class="badge bg-secondary">否</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.created_time %}
+                        {{ item.created_time | int | datetime_format }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-user-btn" 
+                                data-id="{{ item.id }}" 
+                                data-avatar="{{ item.avatar or '' }}" 
+                                data-nickname="{{ item.nickname or '' }}" 
+                                data-country="{{ item.country or '' }}" 
+                                data-balance="{{ item.balance }}" 
+                                data-is-vip="{{ item.is_vip }}" 
+                                data-is-check="{{ item.is_check }}">编辑</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -55,17 +95,114 @@
     </div>
     <!-- 分页 -->
     <div class="p-3 d-flex justify-content-between align-items-center">
-        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_page }} 页</span>
+        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_pages }} 页</span>
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/user?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&page={{ page_data.page-1 }}">上一页</a>
+                    <a class="page-link" href="/admin/user?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
                 </li>
-                <li class="page-item {% if page_data.page == page_data.total_page %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/user?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&page={{ page_data.page+1 }}">下一页</a>
+                <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/user?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
                 </li>
             </ul>
         </nav>
     </div>
 </div>
+
+<!-- 编辑用户弹窗 -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" name="id" id="editUserId">
+                    <div class="mb-3">
+                        <label>头像URL</label>
+                        <input type="text" name="avatar" id="editAvatar" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>昵称</label>
+                        <input type="text" name="nickname" id="editNickname" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>国家</label>
+                        <input type="text" name="country" id="editCountry" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>余额</label>
+                        <input type="number" name="balance" id="editBalance" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>是否VIP</label>
+                        <select name="is_vip" id="editIsVip" class="form-select">
+                            <option value="false">否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>是否审核账户</label>
+                        <select name="is_check" id="editIsCheck" class="form-select">
+                            <option value="false">否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditUser">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// 编辑用户弹窗
+$(".edit-user-btn").click(function(){
+    const btn = $(this);
+    $("#editUserId").val(btn.data("id"));
+    $("#editAvatar").val(btn.data("avatar"));
+    $("#editNickname").val(btn.data("nickname"));
+    $("#editCountry").val(btn.data("country"));
+    $("#editBalance").val(btn.data("balance"));
+    $("#editIsVip").val(btn.data("is-vip").toString());
+    $("#editIsCheck").val(btn.data("is-check").toString());
+    new bootstrap.Modal("#editUserModal").show();
+})
+
+// 编辑用户提交
+$("#submitEditUser").click(async function(){
+    const form = $("#editUserForm");
+    const id = parseInt(form.find("[name=id]").val());
+    const avatar = form.find("[name=avatar]").val();
+    const nickname = form.find("[name=nickname]").val();
+    const country = form.find("[name=country]").val();
+    const balance = parseInt(form.find("[name=balance]").val()) || 0;
+    const is_vip = form.find("[name=is_vip]").val() === "true";
+    const is_check = form.find("[name=is_check]").val() === "true";
+
+    try {
+        const res = await fetch("/admin/api/update_user", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id, avatar, nickname, country, balance, is_vip, is_check})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || "更新失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("更新失败，请稍后重试");
+    }
+})
+</script>
 {% endblock %}

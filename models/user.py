@@ -1,10 +1,25 @@
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, String
 from database import Base
+import datetime
 
 class AppUser(Base):
     __tablename__ = "app_user"
-    id = Column(Integer, primary_key=True)
-    app_id = Column(Integer, ForeignKey("app_list.id"))
-    register_time = Column(DateTime)
-    last_login = Column(DateTime)
-    is_anchor = Column(Boolean, default=False)
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String(64), index=True)
+    app_id = Column(Integer, default=0)
+    created_time = Column(Integer, default=lambda: int(datetime.datetime.now().timestamp()))
+    country = Column(String(64), default="US")
+    ip = Column(String(64))
+    nickname = Column(String(64))
+    avatar = Column(String)
+    email = Column(String(128), index=True)
+    google_id = Column(String(128), index=True)
+    balance = Column(Integer, default=0)
+    is_vip = Column(Boolean, default=False)
+    vip_expire_time = Column(Integer)
+    language_name = Column(String(64), default="English")
+    language_code = Column(String(16), default="en")
+    follow_count = Column(Integer, default=0)
+    fans_count = Column(Integer, default=0)
+    like_count = Column(Integer, default=0)
+    is_check = Column(Boolean, default=False)

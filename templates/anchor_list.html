@@ -315,6 +315,10 @@ $('#submitAddAnchor').click(async function() {
         const data = await res.json();
         if (res.ok && data.code === 200) {
             alert(data.msg);
+            const addModal = bootstrap.Modal.getInstance(document.getElementById('addAnchorModal'));
+            if (addModal) {
+                addModal.hide();
+            }
             location.reload();
         } else {
             alert(data.msg || '新增失败，请重试。');
@@ -354,6 +358,10 @@ $('#submitEditAnchor').click(async function() {
         const data = await res.json();
         if (res.ok && data.code === 200) {
             alert(data.msg);
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editAnchorModal'));
+            if (editModal) {
+                editModal.hide();
+            }
             location.reload();
         } else {
             alert(data.msg || '更新失败，请重试。');

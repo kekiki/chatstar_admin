@@ -6,7 +6,7 @@
 <form action="/admin/anchor" method="get" class="row g-3 mb-4 align-items-end">
     <div class="col-auto">
         <label>全局关键词</label>
-        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="ID/用户ID/昵称/收益">
+        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="ID/昵称/国家/语言">
     </div>
     <div class="col-auto">
         <button class="btn btn-primary">查询</button>
@@ -20,31 +20,61 @@
             <thead class="table-dark">
                 <tr>
                     <th>主播ID</th>
-                    <th>绑定用户ID</th>
-                    <th>主播昵称</th>
-                    <th>累计收益</th>
+                    <th>头像</th>
+                    <th>昵称</th>
+                    <th>国家</th>
+                    <th>语言</th>
+                    <th>关注数</th>
+                    <th>粉丝数</th>
+                    <th>点赞数</th>
+                    <th>审核</th>
+                    <th>创建时间</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
                     <td>{{ item.id }}</td>
-                    <td>{{ item.user_id }}</td>
-                    <td>{{ item.nickname }}</td>
-                    <td class="text-success">¥{{ "%.2f"|format(item.income) }}</td>
+                    <td>
+                        {% if item.avatar %}
+                        <img src="{{ item.avatar }}" alt="头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        {% else %}
+                        <span class="text-muted">无</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.nickname or '-' }}</td>
+                    <td>{{ item.country or '-' }}</td>
+                    <td>{{ item.language_name or item.language_code or '-' }}</td>
+                    <td>{{ item.follow_count }}</td>
+                    <td>{{ item.fans_count }}</td>
+                    <td>{{ item.like_count }}</td>
+                    <td>
+                        {% if item.is_check %}
+                        <span class="badge bg-success">是</span>
+                        {% else %}
+                        <span class="badge bg-secondary">否</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.created_time %}
+                        {{ item.created_time.strftime("%Y-%m-%d %H:%M:%S") }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
     <div class="p-3 d-flex justify-content-between align-items-center">
-        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_page }} 页</span>
+        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_pages }} 页</span>
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
                     <a class="page-link" href="/admin/anchor?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
                 </li>
-                <li class="page-item {% if page_data.page == page_data.total_page %}disabled{% endif %}">
+                <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
                     <a class="page-link" href="/admin/anchor?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
                 </li>
             </ul>

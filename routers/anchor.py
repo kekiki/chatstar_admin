@@ -28,9 +28,10 @@ async def anchor_list(
         q = q.filter(
             or_(
                 models.Anchor.id.like(f"%{keyword}%"),
-                models.Anchor.user_id.like(f"%{keyword}%"),
                 models.Anchor.nickname.like(f"%{keyword}%"),
-                models.Anchor.income.like(f"%{keyword}%")
+                models.Anchor.country.like(f"%{keyword}%"),
+                models.Anchor.language_name.like(f"%{keyword}%"),
+                models.Anchor.language_code.like(f"%{keyword}%")
             )
         )
 

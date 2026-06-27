@@ -2,6 +2,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>主播列表</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAnchorModal">新增主播</button>
 </div>
 <form action="/admin/anchor" method="get" class="row g-3 mb-4 align-items-end">
     <div class="col-auto">
@@ -29,6 +30,7 @@
                     <th>点赞数</th>
                     <th>审核</th>
                     <th>创建时间</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -62,6 +64,22 @@
                         -
                         {% endif %}
                     </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-warning edit-anchor-btn"
+                                data-id="{{ item.id }}"
+                                data-nickname="{{ item.nickname or '' }}"
+                                data-avatar="{{ item.avatar or '' }}"
+                                data-country="{{ item.country or '' }}"
+                                data-language_name="{{ item.language_name or '' }}"
+                                data-language_code="{{ item.language_code or '' }}"
+                                data-follow_count="{{ item.follow_count }}"
+                                data-fans_count="{{ item.fans_count }}"
+                                data-like_count="{{ item.like_count }}"
+                                data-is_check="{{ item.is_check }}">
+                            编辑
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger delete-anchor-btn" data-id="{{ item.id }}">删除</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -81,4 +99,270 @@
         </nav>
     </div>
 </div>
+
+<!-- 新增主播弹窗 -->
+<div class="modal fade" id="addAnchorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增主播</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAnchorForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label>昵称</label>
+                            <input type="text" name="nickname" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>国家</label>
+                            <input type="text" name="country" class="form-control" value="US">
+                        </div>
+                        <div class="col-md-6">
+                            <label>语言名称</label>
+                            <input type="text" name="language_name" class="form-control" value="English">
+                        </div>
+                        <div class="col-md-6">
+                            <label>语言代码</label>
+                            <input type="text" name="language_code" class="form-control" value="en">
+                        </div>
+                        <div class="col-md-6">
+                            <label>头像 URL</label>
+                            <input type="text" name="avatar" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>关注数</label>
+                            <input type="number" name="follow_count" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label>粉丝数</label>
+                            <input type="number" name="fans_count" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label>点赞数</label>
+                            <input type="number" name="like_count" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <p><label>审核状态</label></p>
+                            <label class="radio-item me-3">
+                                <input type="radio" name="is_check" value="true">
+                                <span>已审核</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="is_check" value="false" checked>
+                                <span>未审核</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddAnchor">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑主播弹窗 -->
+<div class="modal fade" id="editAnchorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑主播</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAnchorForm">
+                    <input type="hidden" name="id">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label>昵称</label>
+                            <input type="text" name="nickname" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>国家</label>
+                            <input type="text" name="country" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label>语言名称</label>
+                            <input type="text" name="language_name" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label>语言代码</label>
+                            <input type="text" name="language_code" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label>头像 URL</label>
+                            <input type="text" name="avatar" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>关注数</label>
+                            <input type="number" name="follow_count" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>粉丝数</label>
+                            <input type="number" name="fans_count" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>点赞数</label>
+                            <input type="number" name="like_count" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <p><label>审核状态</label></p>
+                            <label class="radio-item me-3">
+                                <input type="radio" name="is_check" value="true">
+                                <span>已审核</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="is_check" value="false">
+                                <span>未审核</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditAnchor">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function openEditAnchorModal(data) {
+    const modal = new bootstrap.Modal(document.getElementById('editAnchorModal'));
+    const form = $('#editAnchorForm');
+    form.find('[name=id]').val(data.id);
+    form.find('[name=nickname]').val(data.nickname);
+    form.find('[name=avatar]').val(data.avatar);
+    form.find('[name=country]').val(data.country);
+    form.find('[name=language_name]').val(data.language_name);
+    form.find('[name=language_code]').val(data.language_code);
+    form.find('[name=follow_count]').val(data.follow_count);
+    form.find('[name=fans_count]').val(data.fans_count);
+    form.find('[name=like_count]').val(data.like_count);
+    form.find('[name=is_check][value=' + (data.is_check ? 'true' : 'false') + ']').prop('checked', true);
+    modal.show();
+}
+
+$(document).on('click', '.edit-anchor-btn', function() {
+    const button = $(this);
+    openEditAnchorModal({
+        id: button.data('id'),
+        nickname: button.data('nickname'),
+        avatar: button.data('avatar'),
+        country: button.data('country'),
+        language_name: button.data('language_name'),
+        language_code: button.data('language_code'),
+        follow_count: button.data('follow_count'),
+        fans_count: button.data('fans_count'),
+        like_count: button.data('like_count'),
+        is_check: button.data('is_check') === true || button.data('is_check') === 'True' || button.data('is_check') === 'true'
+    });
+});
+
+$(document).on('click', '.delete-anchor-btn', async function() {
+    const id = $(this).data('id');
+    if (!confirm('确认删除该主播吗？')) {
+        return;
+    }
+    try {
+        const res = await fetch(`/admin/api/delete_anchor?id=${id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || '删除失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('删除失败，请稍后重试。');
+    }
+});
+
+$('#submitAddAnchor').click(async function() {
+    const form = $('#addAnchorForm');
+    const payload = {
+        nickname: form.find('[name=nickname]').val(),
+        avatar: form.find('[name=avatar]').val(),
+        country: form.find('[name=country]').val(),
+        language_name: form.find('[name=language_name]').val(),
+        language_code: form.find('[name=language_code]').val(),
+        follow_count: Number(form.find('[name=follow_count]').val() || 0),
+        fans_count: Number(form.find('[name=fans_count]').val() || 0),
+        like_count: Number(form.find('[name=like_count]').val() || 0),
+        is_check: form.find('[name=is_check]:checked').val() === 'true'
+    };
+
+    if (!payload.nickname) {
+        alert('请填写主播昵称。');
+        return;
+    }
+
+    try {
+        const res = await fetch('/admin/api/add_anchor', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || '新增失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('新增失败，请稍后重试。');
+    }
+});
+
+$('#submitEditAnchor').click(async function() {
+    const form = $('#editAnchorForm');
+    const payload = {
+        id: Number(form.find('[name=id]').val()),
+        nickname: form.find('[name=nickname]').val(),
+        avatar: form.find('[name=avatar]').val(),
+        country: form.find('[name=country]').val(),
+        language_name: form.find('[name=language_name]').val(),
+        language_code: form.find('[name=language_code]').val(),
+        follow_count: Number(form.find('[name=follow_count]').val() || 0),
+        fans_count: Number(form.find('[name=fans_count]').val() || 0),
+        like_count: Number(form.find('[name=like_count]').val() || 0),
+        is_check: form.find('[name=is_check]:checked').val() === 'true'
+    };
+
+    if (!payload.nickname) {
+        alert('请填写主播昵称。');
+        return;
+    }
+
+    try {
+        const res = await fetch('/admin/api/update_anchor', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || '更新失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('更新失败，请稍后重试。');
+    }
+});
+</script>
+
 {% endblock %}

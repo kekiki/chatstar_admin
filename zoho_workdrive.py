@@ -107,9 +107,11 @@ class ZohoWorkDrive:
         }
         upload_resp = self._request("/upload", method="POST", params=params, files=upload_files)
         file_data = upload_resp.get("data", [])[0]
-        file_id = file_data["id"]
+        file_id = file_data.get('attributes', {}).get('resource_id')
         logger.info(f"文件{file_name}上传完成，file_id={file_id}")
-        return file_data
+        return {
+            "file_id": file_id
+        }
 
     # ===================== 新增2：生成公开直链 =====================
     def create_public_link(self, file_id: str, download_only: bool = True):
@@ -141,7 +143,7 @@ class ZohoWorkDrive:
         一站式：上传二进制文件 + 自动生成公开下载直链
         """
         upload_res = self.upload_bytes(self.folder_id, file_bytes, file_name)
-        file_id = upload_res["id"]
+        file_id = upload_res["file_id"]
         link_res = self.create_public_link(file_id)
         return {
             "file_info": upload_res,

@@ -335,16 +335,6 @@ async function uploadAvatar(fileInput, previewId, urlInputId) {
     }
 }
 
-// 新增主播头像上传
-$('#addAnchorForm [name=avatar_file]').change(function() {
-    uploadAvatar(this, '#addAvatarPreview', '#addAvatarUrl');
-});
-
-// 编辑主播头像上传
-$('#editAnchorForm [name=avatar_file]').change(function() {
-    uploadAvatar(this, '#editAvatarPreview', '#editAvatarUrl');
-});
-
 $('#submitAddAnchor').click(async function() {
     const form = $('#addAnchorForm');
     

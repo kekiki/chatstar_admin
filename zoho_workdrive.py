@@ -144,8 +144,10 @@ class ZohoWorkDrive:
         """
         upload_res = self.upload_bytes(self.folder_id, file_bytes, file_name)
         file_id = upload_res["file_id"]
-        link_res = self.create_public_link(file_id)
+        # link_res = self.create_public_link(file_id)
+        direct_url = f'https://previewengine-accl.zohoexternal.com/image/WD/{file_id}'
         return {
             "file_info": upload_res,
-            "direct_url": link_res["direct_url"]
+            # "direct_url": direct_url
+            "direct_url": direct_url
         }

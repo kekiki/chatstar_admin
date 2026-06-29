@@ -125,7 +125,7 @@ class ZohoWorkDrive:
         payload = {
             "access": "public",
             "download_only": download_only,
-            "password_protect": False,
+            # "password_protect": False,
             "expiry_days": 0  # 0=永久有效
         }
         resp = self._request(f"/files/{file_id}/share", method="POST", json=payload)

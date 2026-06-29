@@ -5,6 +5,18 @@ import logging
 from config import ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN, ZOHO_ACCOUNT_URL, ZOHO_ORG_ID, ZOHO_ROOT_FOLDER_ID
 
 logger = logging.getLogger("zoho_workdrive")
+logger.propagate = False
+logger.setLevel(logging.DEBUG)
+
+# 文件处理器，日志写入 workdrive.log
+file_handler = logging.FileHandler("workdrive.log", encoding="utf-8")
+file_handler.setLevel(logging.DEBUG)
+
+log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+file_handler.setFormatter(log_format)
+
+logger.addHandler(file_handler)
+logger.info("测试")
 
 # 加载配置
 class ZohoSettings:

@@ -43,7 +43,7 @@ async def user_list(
     if keyword:
         q = q.filter(
             or_(
-                models.AppUser.id.like(f"%{keyword}%"),
+                models.AppUser.user_id.like(f"%{keyword}%"),
                 models.AppUser.device_id.like(f"%{keyword}%"),
                 models.AppUser.app_id.like(f"%{keyword}%"),
                 models.AppUser.nickname.like(f"%{keyword}%"),
@@ -66,7 +66,7 @@ async def user_list(
 @router.put("/admin/api/update_user")
 async def update_user(
     request: Request,
-    id: int = Body(...),
+    user_id: int = Body(...),
     avatar: str = Body(""),
     nickname: str = Body(""),
     country: str = Body(""),
@@ -78,7 +78,7 @@ async def update_user(
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    user = db.query(models.AppUser).filter(models.AppUser.id == id).first()
+    user = db.query(models.AppUser).filter(models.AppUser.user_id == user_id).first()
     if not user:
         return {"code": 404, "msg": "用户不存在"}
     
@@ -101,7 +101,7 @@ async def update_user(
         "code": 200,
         "msg": "更新成功",
         "user": {
-            "id": user.id,
+            "user_id": user.user_id,
             "avatar": user.avatar,
             "nickname": user.nickname,
             "country": user.country,

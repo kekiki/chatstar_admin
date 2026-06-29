@@ -36,7 +36,7 @@
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
-                    <td>{{ item.id }}</td>
+                    <td>{{ item.user_id }}</td>
                     <td>
                         {% for app in apps %}
                         {% if app.id == item.app_id %}
@@ -80,7 +80,7 @@
                     </td>
                     <td>
                         <button class="btn btn-sm btn-warning edit-user-btn" 
-                                data-id="{{ item.id }}" 
+                                data-id="{{ item.user_id }}" 
                                 data-avatar="{{ item.avatar or '' }}" 
                                 data-nickname="{{ item.nickname or '' }}" 
                                 data-country="{{ item.country or '' }}" 
@@ -165,7 +165,7 @@
 // 编辑用户弹窗
 $(".edit-user-btn").click(function(){
     const btn = $(this);
-    $("#editUserId").val(btn.data("id"));
+    $("#editUserId").val(btn.data("user_id"));
     $("#editAvatar").val(btn.data("avatar"));
     $("#editNickname").val(btn.data("nickname"));
     $("#editCountry").val(btn.data("country"));
@@ -178,7 +178,7 @@ $(".edit-user-btn").click(function(){
 // 编辑用户提交
 $("#submitEditUser").click(async function(){
     const form = $("#editUserForm");
-    const id = parseInt(form.find("[name=id]").val());
+    const user_id = parseInt(form.find("[name=user_id]").val());
     const avatar = form.find("[name=avatar]").val();
     const nickname = form.find("[name=nickname]").val();
     const country = form.find("[name=country]").val();
@@ -190,7 +190,7 @@ $("#submitEditUser").click(async function(){
         const res = await fetch("/admin/api/update_user", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id, avatar, nickname, country, balance, is_vip, is_check})
+            body: JSON.stringify({user_id, avatar, nickname, country, balance, is_vip, is_check})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {

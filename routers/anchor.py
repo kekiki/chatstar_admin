@@ -6,6 +6,7 @@ from sqlalchemy import or_
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
+import random
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -27,7 +28,7 @@ async def anchor_list(
     if keyword:
         q = q.filter(
             or_(
-                models.Anchor.id.like(f"%{keyword}%"),
+                models.Anchor.user_id.like(f"%{keyword}%"),
                 models.Anchor.nickname.like(f"%{keyword}%"),
                 models.Anchor.country.like(f"%{keyword}%"),
                 models.Anchor.language_name.like(f"%{keyword}%"),
@@ -60,7 +61,9 @@ async def add_anchor(
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
+    user_id = random.randint(1000000, 9999999) + 10000000
     new_anchor = models.Anchor(
+        user_id=user_id,
         nickname=nickname,
         avatar=avatar,
         country=country,
@@ -78,7 +81,7 @@ async def add_anchor(
         "code": 200,
         "msg": "新增成功",
         "anchor": {
-            "id": new_anchor.id,
+            "user_id": new_anchor.user_id,
             "nickname": new_anchor.nickname,
             "avatar": new_anchor.avatar,
             "country": new_anchor.country,
@@ -94,7 +97,7 @@ async def add_anchor(
 @router.put("/admin/api/update_anchor")
 async def update_anchor(
     request: Request,
-    id: int = Body(...),
+    user_id: int = Body(...),
     nickname: str = Body(None),
     avatar: str = Body(None),
     country: str = Body(None),
@@ -109,7 +112,7 @@ async def update_anchor(
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    anchor = db.query(models.Anchor).filter(models.Anchor.id == id).first()
+    anchor = db.query(models.Anchor).filter(models.Anchor.user_id == user_id).first()
     if not anchor:
         return {"code": 404, "msg": "主播不存在"}
 
@@ -138,7 +141,7 @@ async def update_anchor(
         "code": 200,
         "msg": "更新成功",
         "anchor": {
-            "id": anchor.id,
+            "user_id": anchor.user_id,
             "nickname": anchor.nickname,
             "avatar": anchor.avatar,
             "country": anchor.country,
@@ -154,13 +157,13 @@ async def update_anchor(
 @router.delete("/admin/api/delete_anchor")
 async def delete_anchor(
     request: Request,
-    id: int = Query(...),
+    user_id: int = Query(...),
     db: Session = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    anchor = db.query(models.Anchor).filter(models.Anchor.id == id).first()
+    anchor = db.query(models.Anchor).filter(models.Anchor.user_id == user_id).first()
     if not anchor:
         return {"code": 404, "msg": "主播不存在"}
     db.delete(anchor)

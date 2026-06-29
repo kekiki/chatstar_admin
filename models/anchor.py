@@ -5,6 +5,7 @@ import datetime
 class Anchor(Base):
     __tablename__ = "app_anchors"
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
     created_time = Column(DateTime, default=lambda: datetime.datetime.now())
     country = Column(String(64), default="US")
     nickname = Column(String(100))

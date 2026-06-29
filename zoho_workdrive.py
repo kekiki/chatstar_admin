@@ -1,7 +1,10 @@
 import requests
 from fastapi import HTTPException
+import logging
 
 from config import ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN, ZOHO_ACCOUNT_URL, ZOHO_ORG_ID, ZOHO_ROOT_FOLDER_ID
+
+logger = logging.getLogger("zoho_workdrive")
 
 # 加载配置
 class ZohoSettings:
@@ -42,6 +45,7 @@ class ZohoWorkDrive:
         try:
             resp = requests.post(url, data=data, timeout=30)
         except Exception as e:
+            logger.exception("failed to refresh token: %s", e)
             raise HTTPException(status_code=500, detail=f"Zoho鉴权网络异常: {str(e)}")
 
         if resp.status_code != 200:
@@ -50,6 +54,7 @@ class ZohoWorkDrive:
         json_data = resp.json()
         new_token = json_data.get("access_token")
         if not new_token:
+            logger.error("未获取到access_token, resp: %s", resp.text)
             raise HTTPException(status_code=500, detail="未获取到access_token")
         return new_token
 

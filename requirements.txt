@@ -10,3 +10,5 @@ jinja2==3.0.3
 python-dotenv
 openpyxl
 psycopg2-binary
+Pillow
+requests

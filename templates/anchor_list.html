@@ -128,8 +128,10 @@
                             <input type="text" name="language_code" class="form-control" value="en">
                         </div>
                         <div class="col-md-6">
-                            <label>头像 URL</label>
-                            <input type="text" name="avatar" class="form-control">
+                            <label>头像</label>
+                            <input type="file" name="avatar_file" class="form-control" accept="image/*">
+                            <input type="hidden" name="avatar" id="addAvatarUrl">
+                            <div id="addAvatarPreview" class="mt-2"></div>
                         </div>
                         <div class="col-md-4">
                             <label>关注数</label>
@@ -194,8 +196,10 @@
                             <input type="text" name="language_code" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label>头像 URL</label>
-                            <input type="text" name="avatar" class="form-control">
+                            <label>头像</label>
+                            <input type="file" name="avatar_file" class="form-control" accept="image/*">
+                            <input type="hidden" name="avatar" id="editAvatarUrl">
+                            <div id="editAvatarPreview" class="mt-2"></div>
                         </div>
                         <div class="col-md-4">
                             <label>关注数</label>
@@ -246,6 +250,14 @@ function openEditAnchorModal(data) {
     form.find('[name=fans_count]').val(data.fans_count);
     form.find('[name=like_count]').val(data.like_count);
     form.find('[name=is_check][value=' + (data.is_check ? 'true' : 'false') + ']').prop('checked', true);
+    
+    // 显示现有头像预览
+    if (data.avatar) {
+        $('#editAvatarPreview').html(`<img src="${data.avatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`);
+    } else {
+        $('#editAvatarPreview').html('');
+    }
+    
     modal.show();
 }
 
@@ -287,8 +299,62 @@ $(document).on('click', '.delete-anchor-btn', async function() {
     }
 });
 
+// 头像上传处理
+async function uploadAvatar(fileInput, previewId, urlInputId) {
+    const file = fileInput.files[0];
+    if (!file) return null;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return null;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const res = await fetch('/admin/api/upload_avatar', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            // 显示预览
+            $(previewId).html(`<img src="${data.avatar_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`);
+            // 设置隐藏字段
+            $(urlInputId).val(data.avatar_url);
+            return data.avatar_url;
+        } else {
+            alert(data.msg || '上传失败');
+            return null;
+        }
+    } catch (error) {
+        console.error(error);
+        alert('上传失败，请稍后重试');
+        return null;
+    }
+}
+
+// 新增主播头像上传
+$('#addAnchorForm [name=avatar_file]').change(function() {
+    uploadAvatar(this, '#addAvatarPreview', '#addAvatarUrl');
+});
+
+// 编辑主播头像上传
+$('#editAnchorForm [name=avatar_file]').change(function() {
+    uploadAvatar(this, '#editAvatarPreview', '#editAvatarUrl');
+});
+
 $('#submitAddAnchor').click(async function() {
     const form = $('#addAnchorForm');
+    
+    // 如果选择了文件但还没上传，先上传
+    const fileInput = form.find('[name=avatar_file]')[0];
+    if (fileInput.files.length > 0 && !form.find('[name=avatar]').val()) {
+        const avatarUrl = await uploadAvatar(fileInput, '#addAvatarPreview', '#addAvatarUrl');
+        if (!avatarUrl) return;
+    }
+    
     const payload = {
         nickname: form.find('[name=nickname]').val(),
         avatar: form.find('[name=avatar]').val(),
@@ -331,6 +397,14 @@ $('#submitAddAnchor').click(async function() {
 
 $('#submitEditAnchor').click(async function() {
     const form = $('#editAnchorForm');
+    
+    // 如果选择了文件但还没上传，先上传
+    const fileInput = form.find('[name=avatar_file]')[0];
+    if (fileInput.files.length > 0 && !form.find('[name=avatar]').val()) {
+        const avatarUrl = await uploadAvatar(fileInput, '#editAvatarPreview', '#editAvatarUrl');
+        if (!avatarUrl) return;
+    }
+    
     const payload = {
         user_id: Number(form.find('[name=user_id]').val()),
         nickname: form.find('[name=nickname]').val(),

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Query, Body
+from fastapi import APIRouter, Request, Depends, Query, Body, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -7,6 +7,8 @@ from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import random
+from image_utils import compress_image
+from zoho_workdrive import ZohoWorkDrive
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -43,6 +45,41 @@ async def anchor_list(
         "page_data": page_data,
         "keyword": keyword
     })
+
+@router.post("/admin/api/upload_avatar")
+async def upload_avatar(
+    request: Request,
+    file: UploadFile = File(...),
+    _user=Depends(lambda: None)
+):
+    from routers.auth import require_login
+    from database import get_db
+    db = next(get_db())
+    _user = require_login(request, db)
+    
+    # 检查文件类型
+    if not file.content_type or not file.content_type.startswith('image/'):
+        return {"code": 400, "msg": "只支持图片文件"}
+    
+    try:
+        # 读取文件内容
+        file_bytes = await file.read()
+        
+        # 压缩图片
+        compressed_bytes = compress_image(file_bytes, max_size=300, quality=85)
+        
+        # 上传到Zoho
+        zoho = ZohoWorkDrive()
+        filename = f"anchor_avatar_{random.randint(10000, 99999)}.jpg"
+        link_info = zoho.upload_and_get_link(compressed_bytes, filename)
+        
+        return {
+            "code": 200,
+            "msg": "上传成功",
+            "avatar_url": link_info["direct_url"]
+        }
+    except Exception as e:
+        return {"code": 500, "msg": f"上传失败: {str(e)}"}
 
 @router.post("/admin/api/add_anchor")
 async def add_anchor(

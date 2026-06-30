@@ -12,3 +12,5 @@ openpyxl
 psycopg2-binary
 Pillow
 requests
+boto3
+uuid

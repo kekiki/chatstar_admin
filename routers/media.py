@@ -189,9 +189,9 @@ async def update_media(
     if not media:
         return {"code": 404, "msg": "媒体不存在"}
 
-    if url is not None:
+    if url is not None and url != "":
         media.url = url
-    if cover is not None:
+    if cover is not None and cover != "":
         media.cover = cover
     if user_id is not None:
         media.user_id = user_id

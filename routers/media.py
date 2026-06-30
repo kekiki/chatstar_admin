@@ -6,19 +6,28 @@ from sqlalchemy import or_
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
-import random
 import os
 import tempfile
 # from image_utils import compress_image
 # from zoho_workdrive import ZohoWorkDrive
 from aws_s3_client import AWSS3Client
-from moviepy.editor import VideoFileClip
+
+# Optional import for video thumbnail generation
+try:
+    from moviepy.editor import VideoFileClip
+    MOVIEPY_AVAILABLE = True
+except ImportError:
+    MOVIEPY_AVAILABLE = False
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 def generate_video_thumbnail(video_bytes, filename):
     """Generate thumbnail from video bytes."""
+    if not MOVIEPY_AVAILABLE:
+        print("moviepy not installed, skipping thumbnail generation")
+        return None
+    
     try:
         # Create temporary file for video
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_video:

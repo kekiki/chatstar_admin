@@ -268,6 +268,7 @@ async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
+            console.log('Upload response:', data);
             // 显示预览
             if (file.type.startsWith('video/')) {
                 $(previewId).html(`<video src="${data.url}" style="width: 160px; height: 160px;" controls></video>`);
@@ -276,8 +277,9 @@ async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
             }
             // 设置隐藏字段
             $(urlInputId).val(data.url);
-            if (coverInputId && data.cover) {
-                $(coverInputId).val(data.cover);
+            if (coverInputId) {
+                $(coverInputId).val(data.cover || '');
+                console.log('Cover set to:', data.cover);
             }
             return data.url;
         } else {

@@ -8,8 +8,6 @@ from tools import get_page_params, paginate_query
 import models
 import os
 import tempfile
-# from image_utils import compress_image
-# from zoho_workdrive import ZohoWorkDrive
 from aws_s3_client import AWSS3Client
 
 # Optional import for video thumbnail generation
@@ -108,11 +106,6 @@ async def upload_media(
         # 读取文件内容
         file_bytes = await file.read()
         file_content_type = file.content_type
-        
-        # # 上传到Zoho
-        # zoho = ZohoWorkDrive()
-        # filename = f"anchor_avatar_{random.randint(10000, 99999)}.jpg"
-        # link_info = zoho.upload_and_get_link(compressed_bytes, filename)
 
         aws_s3_client = AWSS3Client()
         link_info = aws_s3_client.upload_and_get_link(file_bytes, file.filename, file_content_type)
@@ -120,11 +113,16 @@ async def upload_media(
         cover_url = None
         # 如果是视频，自动生成封面
         if file_content_type.startswith('video/'):
+            print(f"Video detected, generating thumbnail...")
             thumbnail_bytes = generate_video_thumbnail(file_bytes, file.filename)
             if thumbnail_bytes:
+                print(f"Thumbnail generated successfully, uploading...")
                 thumbnail_filename = f"thumb_{file.filename.rsplit('.', 1)[0]}.jpg"
                 cover_info = aws_s3_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
                 cover_url = cover_info["url"]
+                print(f"Thumbnail uploaded: {cover_url}")
+            else:
+                print(f"Thumbnail generation failed or moviepy not available")
         
         return {
             "code": 200,

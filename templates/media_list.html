@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>媒体列表</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMediaModal">新增媒体</button>
+</div>
+<form action="/admin/media" method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-auto">
+        <label>全局关键词</label>
+        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="用户ID">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary">查询</button>
+        <a href="/admin/media" class="btn btn-outline-secondary">重置</a>
+    </div>
+</form>
+<hr>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>用户ID</th>
+                    <th>封面</th>
+                    <th>是否视频</th>
+                    <th>是否VIP</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_data.list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.user_id }}</td>
+                    <td>
+                        {% if item.is_video %}
+                        <video src="{{ item.url }}" style="width: 100px; height: 100px;" controls></video>
+                        {% elif item.cover %}
+                        <img src="{{ item.cover }}" alt="封面" style="width: 100px; height: 100px;">
+                        {% elif item.url %}
+                        <img src="{{ item.url }}" alt="图片" style="width: 100px; height: 100px;">
+                        {% else %}
+                        <span class="text-muted">无</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.is_video %}
+                        <span class="badge bg-success">是</span>
+                        {% else %}
+                        <span class="badge bg-secondary">否</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.is_vip %}
+                        <span class="badge bg-success">是</span>
+                        {% else %}
+                        <span class="badge bg-secondary">否</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.created_time }}</td>
+                    <td>
+                        {% if item.created_time %}
+                        {{ item.created_time.strftime("%Y-%m-%d %H:%M:%S") }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-warning edit-media-btn"
+                                data-id="{{ item.id }}"
+                                data-user_id="{{ item.user_id }}"
+                                data-cover="{{ item.cover }}"
+                                data-url="{{ item.url }}"
+                                data-is_video="{{ item.is_video }}"
+                                data-is_vip="{{ item.is_vip }}">
+                            编辑
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger delete-media-btn" data-id="{{ item.id }}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_pages }} 页</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/anchor?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
+                </li>
+                <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/anchor?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- 新增媒体弹窗 -->
+<div class="modal fade" id="addMediaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增媒体</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMediaForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label>用户ID</label>
+                            <input type="text" name="user_id" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>媒体</label>
+                            <input type="file" name="media_file" class="form-control" accept="image/*,video/*">
+                            <input type="hidden" name="media" id="addMediaUrl">
+                            <input type="hidden" name="cover" id="addMediaCover">
+                            <div id="addMediaPreview" class="mt-2"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <p><label>是否视频</label></p>
+                            <label class="radio-item me-3">
+                                <input type="radio" name="is_video" value="true">
+                                <span>是</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="is_video" value="false" checked>
+                                <span>否</span>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <p><label>是否VIP</label></p>
+                            <label class="radio-item me-3">
+                                <input type="radio" name="is_vip" value="true">
+                                <span>是</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="is_vip" value="false" checked>
+                                <span>否</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddMedia">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑媒体弹窗 -->
+<div class="modal fade" id="editMediaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑媒体</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMediaForm">
+                    <input type="hidden" name="id">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label>用户ID</label>
+                            <input type="text" name="user_id" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>媒体</label>
+                            <input type="file" name="media_file" class="form-control" accept="image/*,video/*">
+                            <input type="hidden" name="media" id="editMediaUrl">
+                            <input type="hidden" name="cover" id="editMediaCover">
+                            <div id="editMediaPreview" class="mt-2"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <p><label>是否视频</label></p>
+                            <label class="radio-item me-3">
+                                <input type="radio" name="is_video" value="true">
+                                <span>是</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="is_video" value="false">
+                                <span>否</span>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <p><label>是否VIP</label></p>
+                            <label class="radio-item me-3">
+                                <input type="radio" name="is_vip" value="true">
+                                <span>是</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="is_vip" value="false">
+                                <span>否</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditAnchor">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function openeditMediaModal(data) {
+    const modal = new bootstrap.Modal(document.getElementById('editMediaModal'));
+    const form = $('#editMediaForm');
+    form.find('[name=id]').val(data.id);
+    form.find('[name=user_id]').val(data.user_id);
+    form.find('[name=media]').val(data.url);
+    form.find('[name=cover]').val(data.cover || '');
+    form.find('[name=is_video][value=' + (data.is_video ? 'true' : 'false') + ']').prop('checked', true);
+    form.find('[name=is_vip][value=' + (data.is_vip ? 'true' : 'false') + ']').prop('checked', true);
+    
+    // 显示现有媒体预览
+    if (data.is_video) {
+        $('#editMediaPreview').html(`<video src="${data.url}" style="width: 160px; height: 160px;" controls></video>`);
+    } else if (data.cover) {
+        $('#editMediaPreview').html(`<img src="${data.cover}" style="width: 160px; height: 160px;">`);
+    } else if (data.url) {
+        $('#editMediaPreview').html(`<img src="${data.url}" style="width: 160px; height: 160px;">`);
+    } else {
+        $('#editMediaPreview').html('');
+    }
+    
+    modal.show();
+}
+
+$(document).on('click', '.edit-media-btn', function() {
+    const button = $(this);
+    openeditMediaModal({
+        id: button.data('id'),
+        user_id: button.data('user_id'),
+        cover: button.data('cover'),
+        url: button.data('url'),
+        is_video: button.data('is_video') === true || button.data('is_video') === 'True' || button.data('is_video') === 'true',
+        is_vip: button.data('is_vip') === true || button.data('is_vip') === 'True' || button.data('is_vip') === 'true'
+    });
+});
+
+$(document).on('click', '.delete-media-btn', async function() {
+    const id = $(this).data('id');
+    if (!confirm('确认删除该媒体吗？')) {
+        return;
+    }
+    try {
+        const res = await fetch(`/admin/api/delete_media?id=${id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || '删除失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('删除失败，请稍后重试。');
+    }
+});
+
+// 媒体上传处理
+async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
+    const file = fileInput.files[0];
+    if (!file) return null;
+    
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        alert('请选择图片或视频文件');
+        return null;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const res = await fetch('/admin/api/upload_media', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            // 显示预览
+            if (file.type.startsWith('video/')) {
+                $(previewId).html(`<video src="${data.url}" style="width: 160px; height: 160px;" controls></video>`);
+            } else {
+                $(previewId).html(`<img src="${data.url}" style="width: 160px; height: 160px;">`);
+            }
+            // 设置隐藏字段
+            $(urlInputId).val(data.url);
+            if (coverInputId && data.cover) {
+                $(coverInputId).val(data.cover);
+            }
+            return data.url;
+        } else {
+            alert(data.msg || '上传失败');
+            return null;
+        }
+    } catch (error) {
+        console.error(error);
+        alert('上传失败，请稍后重试');
+        return null;
+    }
+}
+
+$('#submitAddMedia').click(async function() {
+    const form = $('#addMediaForm');
+    
+    // 如果选择了文件但还没上传，先上传
+    const fileInput = form.find('[name=media_file]')[0];
+    if (fileInput.files.length > 0 && !form.find('[name=media]').val()) {
+        const mediaUrl = await uploadMedia(fileInput, '#addMediaPreview', '#addMediaUrl', '#addMediaCover');
+        if (!mediaUrl) return;
+    }
+    
+    const payload = {
+        user_id: form.find('[name=user_id]').val(),
+        url: form.find('[name=media]').val(),
+        cover: form.find('[name=cover]').val(),
+        is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : form.find('[name=is_video]:checked').val() === 'true',
+        is_vip: form.find('[name=is_vip]:checked').val() === 'true'
+    };
+
+    if (!payload.user_id) {
+        alert('请填写用户ID。');
+        return;
+    }
+
+    try {
+        const res = await fetch('/admin/api/add_media', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            const addModal = bootstrap.Modal.getInstance(document.getElementById('addMediaModal'));
+            if (addModal) {
+                addModal.hide();
+            }
+            location.reload();
+        } else {
+            alert(data.msg || '新增失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('新增失败，请稍后重试。');
+    }
+});
+
+$('#submitEditAnchor').click(async function() {
+    const form = $('#editMediaForm');
+    
+    // 如果选择了文件但还没上传，先上传
+    const fileInput = form.find('[name=media_file]')[0];
+    if (fileInput.files.length > 0 && !form.find('[name=media]').val()) {
+        const mediaUrl = await uploadMedia(fileInput, '#editMediaPreview', '#editMediaUrl', '#editMediaCover');
+        if (!mediaUrl) return;
+    }
+    
+    const payload = {
+        id: Number(form.find('[name=id]').val()),
+        user_id: Number(form.find('[name=user_id]').val()),
+        url: form.find('[name=media]').val(),
+        cover: form.find('[name=cover]').val(),
+        is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : form.find('[name=is_video]:checked').val() === 'true',
+        is_vip: form.find('[name=is_vip]:checked').val() === 'true',
+    };
+
+    if (!payload.user_id) {
+        alert('请填写用户ID。');
+        return;
+    }
+
+    try {
+        const res = await fetch('/admin/api/update_media', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editMediaModal'));
+            if (editModal) {
+                editModal.hide();
+            }
+            location.reload();
+        } else {
+            alert(data.msg || '更新失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('更新失败，请稍后重试。');
+    }
+});
+</script>
+
+{% endblock %}

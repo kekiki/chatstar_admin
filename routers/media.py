@@ -1,0 +1,223 @@
+from fastapi import APIRouter, Request, Depends, Query, Body, UploadFile, File
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from database import get_db
+from tools import get_page_params, paginate_query
+import models
+import random
+import os
+import tempfile
+# from image_utils import compress_image
+# from zoho_workdrive import ZohoWorkDrive
+from aws_s3_client import AWSS3Client
+from moviepy.editor import VideoFileClip
+
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
+
+def generate_video_thumbnail(video_bytes, filename):
+    """Generate thumbnail from video bytes."""
+    try:
+        # Create temporary file for video
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_video:
+            temp_video.write(video_bytes)
+            temp_video_path = temp_video.name
+        
+        # Generate thumbnail using moviepy
+        clip = VideoFileClip(temp_video_path)
+        # Get frame at 1 second (or middle if video is shorter)
+        thumbnail_time = min(1.0, clip.duration / 2) if clip.duration > 0 else 0
+        frame = clip.get_frame(thumbnail_time)
+        
+        # Save thumbnail to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_thumb:
+            from PIL import Image
+            img = Image.fromarray(frame)
+            img.save(temp_thumb.name, 'JPEG')
+            temp_thumb_path = temp_thumb.name
+        
+        # Read thumbnail bytes
+        with open(temp_thumb_path, 'rb') as f:
+            thumbnail_bytes = f.read()
+        
+        # Clean up temporary files
+        os.unlink(temp_video_path)
+        os.unlink(temp_thumb_path)
+        
+        return thumbnail_bytes
+    except Exception as e:
+        print(f"Error generating thumbnail: {e}")
+        return None
+
+@router.get("/admin/media", response_class=HTMLResponse)
+async def media_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1),
+    page_size: int = Query(10),
+    keyword: str = Query("", description="全字段模糊搜索"),
+    _user=Depends(lambda: None)
+):
+    from routers.auth import require_login
+    _user = require_login(request, db)
+    page, page_size, offset = get_page_params(page, page_size)
+    q = db.query(models.Media)
+
+    if keyword:
+        q = q.filter(
+            or_(
+                models.Media.user_id.like(f"%{keyword}%"),
+            )
+        )
+
+    page_data = paginate_query(db, q, offset, page_size)
+    return templates.TemplateResponse(request, "media_list.html", {
+        "request": request,
+        "active_menu": "media",
+        "page_data": page_data,
+        "keyword": keyword
+    })
+
+@router.post("/admin/api/upload_media")
+async def upload_media(
+    request: Request,
+    file: UploadFile = File(...),
+    _user=Depends(lambda: None)
+):
+    from routers.auth import require_login
+    from database import get_db
+    db = next(get_db())
+    _user = require_login(request, db)
+    
+    # 检查文件类型
+    if not file.content_type or (not file.content_type.startswith('image/') and not file.content_type.startswith('video/')):
+        return {"code": 400, "msg": "只支持图片或视频文件"}
+    
+    try:
+        # 读取文件内容
+        file_bytes = await file.read()
+        file_content_type = file.content_type
+        
+        # # 上传到Zoho
+        # zoho = ZohoWorkDrive()
+        # filename = f"anchor_avatar_{random.randint(10000, 99999)}.jpg"
+        # link_info = zoho.upload_and_get_link(compressed_bytes, filename)
+
+        aws_s3_client = AWSS3Client()
+        link_info = aws_s3_client.upload_and_get_link(file_bytes, file.filename, file_content_type)
+        
+        cover_url = None
+        # 如果是视频，自动生成封面
+        if file_content_type.startswith('video/'):
+            thumbnail_bytes = generate_video_thumbnail(file_bytes, file.filename)
+            if thumbnail_bytes:
+                thumbnail_filename = f"thumb_{file.filename.rsplit('.', 1)[0]}.jpg"
+                cover_info = aws_s3_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
+                cover_url = cover_info["url"]
+        
+        return {
+            "code": 200,
+            "msg": "上传成功",
+            "url": link_info["url"],
+            "cover": cover_url
+        }
+    except Exception as e:
+        return {"code": 500, "msg": f"上传失败: {str(e)}"}
+
+@router.post("/admin/api/add_media")
+async def add_media(
+    request: Request,
+    url: str = Body(""),
+    cover: str = Body(""),
+    user_id: int = Body(0),
+    is_vip: bool = Body(False),
+    is_video: bool = Body(False),
+    db: Session = Depends(get_db),
+    _user=Depends(lambda: None)
+):
+    from routers.auth import require_login
+    _user = require_login(request, db)
+    new_media = models.Media(
+        user_id=user_id,
+        url=url,
+        cover=cover,
+        is_vip=is_vip,
+        is_video=is_video
+    )
+    db.add(new_media)
+    db.commit()
+    db.refresh(new_media)
+    return {
+        "code": 200,
+        "msg": "新增成功",
+        "media": {
+            "id": new_media.id,
+            "user_id": new_media.user_id,
+            "url": new_media.url,
+            "cover": new_media.cover,
+            "is_vip": new_media.is_vip,
+            "is_video": new_media.is_video
+        }
+    }
+
+@router.put("/admin/api/update_media")
+async def update_media(
+    request: Request,
+    id: int = Body(...),
+    user_id: int = Body(None),
+    url: str = Body(None),
+    cover: str = Body(None),
+    is_vip: bool = Body(False),
+    is_video: bool = Body(None),
+    db: Session = Depends(get_db),
+    _user=Depends(lambda: None)
+):
+    from routers.auth import require_login
+    _user = require_login(request, db)
+    media = db.query(models.Media).filter(models.Media.id == id).first()
+    if not media:
+        return {"code": 404, "msg": "媒体不存在"}
+
+    if url is not None:
+        media.url = url
+    if cover is not None:
+        media.cover = cover
+    if user_id is not None:
+        media.user_id = user_id
+    if is_vip is not None:
+        media.is_vip = is_vip
+    if is_video is not None:
+        media.is_video = is_video
+
+    db.commit()
+    db.refresh(media)
+    return {
+        "code": 200,
+        "msg": "更新成功",
+        "media": {
+            "id": media.id,
+            "user_id": media.user_id,
+            "url": media.url,
+            "cover": media.cover,
+            "is_vip": media.is_vip,
+            "is_video": media.is_video
+        }
+    }
+
+@router.delete("/admin/api/delete_media")
+async def delete_media(
+    request: Request,
+    id: int = Query(...),
+    db: Session = Depends(get_db),
+    _user=Depends(lambda: None)
+):
+    from routers.auth import require_login
+    _user = require_login(request, db)
+    media = db.query(models.Media).filter(models.Media.id == id).first()
+    if not media:
+        return {"code": 404, "msg": "媒体不存在"}
+    db.delete(media)
+    db.commit()
+    return {"code": 200, "msg": "删除成功"}

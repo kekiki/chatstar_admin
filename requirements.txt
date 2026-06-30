@@ -14,3 +14,4 @@ Pillow
 requests
 boto3
 uuid
+moviepy

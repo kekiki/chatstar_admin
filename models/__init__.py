@@ -5,5 +5,6 @@ from .user import AppUser
 from .anchor import Anchor
 from .order import PayOrder
 from .stat import DailyStat
+from .media import Media
 
-__all__ = ['AdminUser', 'AppList', 'AppConfig', 'AppUser', 'Anchor', 'PayOrder', 'DailyStat']
+__all__ = ['AdminUser', 'AppList', 'AppConfig', 'AppUser', 'Anchor', 'PayOrder', 'DailyStat', 'Media']

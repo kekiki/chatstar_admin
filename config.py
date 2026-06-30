@@ -23,11 +23,7 @@ ZOHO_ORG_ID = os.environ.get("ZOHO_ORG_ID", "")
 ZOHO_ROOT_FOLDER_ID = os.environ.get("ZOHO_ROOT_FOLDER_ID", "")
 
 # AWS S3
-# AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
-# AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
-# AWS_REGION = os.environ.get("AWS_REGION", "")
-# S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
-AWS_ACCESS_KEY_ID="AKIAW5PEW3QDNCLM6PPB"
-AWS_SECRET_ACCESS_KEY="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"
-AWS_REGION="ap-southeast-1"
-S3_BUCKET_NAME="chatstar-475610405894-ap-southeast-1-an"
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+AWS_REGION = os.environ.get("AWS_REGION", "")
+S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")

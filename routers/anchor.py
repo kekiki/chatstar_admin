@@ -9,6 +9,7 @@ import models
 import random
 from image_utils import compress_image
 from zoho_workdrive import ZohoWorkDrive
+from aws_s3_client import AWSS3Client
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -64,19 +65,22 @@ async def upload_avatar(
     try:
         # 读取文件内容
         file_bytes = await file.read()
-        
+        file_content_type = file.content_type
         # 压缩图片
         compressed_bytes = compress_image(file_bytes, max_size=300, quality=85)
         
-        # 上传到Zoho
-        zoho = ZohoWorkDrive()
-        filename = f"anchor_avatar_{random.randint(10000, 99999)}.jpg"
-        link_info = zoho.upload_and_get_link(compressed_bytes, filename)
+        # # 上传到Zoho
+        # zoho = ZohoWorkDrive()
+        # filename = f"anchor_avatar_{random.randint(10000, 99999)}.jpg"
+        # link_info = zoho.upload_and_get_link(compressed_bytes, filename)
+
+        aws_s3_client = AWSS3Client()
+        link_info = aws_s3_client.upload_and_get_link(compressed_bytes, file.filename, file_content_type)
         
         return {
             "code": 200,
             "msg": "上传成功",
-            "avatar_url": link_info["direct_url"]
+            "avatar_url": link_info["url"]
         }
     except Exception as e:
         return {"code": 500, "msg": f"上传失败: {str(e)}"}

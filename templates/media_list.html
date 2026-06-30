@@ -122,17 +122,6 @@
                             <div id="addMediaPreview" class="mt-2"></div>
                         </div>
                         <div class="col-md-6">
-                            <p><label>是否视频</label></p>
-                            <label class="radio-item me-3">
-                                <input type="radio" name="is_video" value="true">
-                                <span>是</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="is_video" value="false" checked>
-                                <span>否</span>
-                            </label>
-                        </div>
-                        <div class="col-md-6">
                             <p><label>是否VIP</label></p>
                             <label class="radio-item me-3">
                                 <input type="radio" name="is_vip" value="true">
@@ -178,17 +167,6 @@
                             <div id="editMediaPreview" class="mt-2"></div>
                         </div>
                         <div class="col-md-6">
-                            <p><label>是否视频</label></p>
-                            <label class="radio-item me-3">
-                                <input type="radio" name="is_video" value="true">
-                                <span>是</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="is_video" value="false">
-                                <span>否</span>
-                            </label>
-                        </div>
-                        <div class="col-md-6">
                             <p><label>是否VIP</label></p>
                             <label class="radio-item me-3">
                                 <input type="radio" name="is_vip" value="true">
@@ -219,7 +197,6 @@ function openeditMediaModal(data) {
     form.find('[name=user_id]').val(data.user_id);
     form.find('[name=media]').val(data.url);
     form.find('[name=cover]').val(data.cover || '');
-    form.find('[name=is_video][value=' + (data.is_video ? 'true' : 'false') + ']').prop('checked', true);
     form.find('[name=is_vip][value=' + (data.is_vip ? 'true' : 'false') + ']').prop('checked', true);
     
     // 显示现有媒体预览
@@ -327,7 +304,7 @@ $('#submitAddMedia').click(async function() {
         user_id: form.find('[name=user_id]').val(),
         url: form.find('[name=media]').val(),
         cover: form.find('[name=cover]').val(),
-        is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : form.find('[name=is_video]:checked').val() === 'true',
+        is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : false,
         is_vip: form.find('[name=is_vip]:checked').val() === 'true'
     };
 
@@ -374,7 +351,7 @@ $('#submitEditAnchor').click(async function() {
         user_id: Number(form.find('[name=user_id]').val()),
         url: form.find('[name=media]').val(),
         cover: form.find('[name=cover]').val(),
-        is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : form.find('[name=is_video]:checked').val() === 'true',
+        is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : data.is_video,
         is_vip: form.find('[name=is_vip]:checked').val() === 'true',
     };
 

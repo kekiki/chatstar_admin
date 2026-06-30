@@ -30,7 +30,6 @@ class AWSS3Client:
             Key=key,
             Body=file_bytes,
             ContentType=file_content_type,
-            # ACL="public-read"
         )
         return {
             "key": key,

@@ -67,7 +67,7 @@ async def upload_avatar(
         file_bytes = await file.read()
         file_content_type = file.content_type
         # 压缩图片
-        compressed_bytes = compress_image(file_bytes, max_size=300, quality=85)
+        # compressed_bytes = compress_image(file_bytes, max_size=300, quality=85)
         
         # # 上传到Zoho
         # zoho = ZohoWorkDrive()
@@ -75,7 +75,7 @@ async def upload_avatar(
         # link_info = zoho.upload_and_get_link(compressed_bytes, filename)
 
         aws_s3_client = AWSS3Client()
-        link_info = aws_s3_client.upload_and_get_link(compressed_bytes, file.filename, file_content_type)
+        link_info = aws_s3_client.upload_and_get_link(file_bytes, file.filename, file_content_type)
         
         return {
             "code": 200,

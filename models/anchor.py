@@ -10,6 +10,7 @@ class Anchor(Base):
     country = Column(String(64), default="US")
     nickname = Column(String(100))
     avatar = Column(String)
+    age = Column(Integer, default=20)
     language_name = Column(String(64), default="English")
     language_code = Column(String(16), default="en")
     follow_count = Column(Integer, default=0)

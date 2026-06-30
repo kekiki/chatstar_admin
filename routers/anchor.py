@@ -89,6 +89,7 @@ async def upload_avatar(
 async def add_anchor(
     request: Request,
     nickname: str = Body(...),
+    age: int = Body(0),
     avatar: str = Body(""),
     country: str = Body("US"),
     language_name: str = Body("English"),
@@ -106,6 +107,7 @@ async def add_anchor(
     new_anchor = models.Anchor(
         user_id=user_id,
         nickname=nickname,
+        age=age,
         avatar=avatar,
         country=country,
         language_name=language_name,
@@ -124,6 +126,7 @@ async def add_anchor(
         "anchor": {
             "user_id": new_anchor.user_id,
             "nickname": new_anchor.nickname,
+            "age": new_anchor.age,
             "avatar": new_anchor.avatar,
             "country": new_anchor.country,
             "language_name": new_anchor.language_name,
@@ -140,6 +143,7 @@ async def update_anchor(
     request: Request,
     user_id: int = Body(...),
     nickname: str = Body(None),
+    age: int = Body(None),
     avatar: str = Body(None),
     country: str = Body(None),
     language_name: str = Body(None),
@@ -159,6 +163,8 @@ async def update_anchor(
 
     if nickname is not None:
         anchor.nickname = nickname
+    if age is not None:
+        anchor.age = age
     if avatar is not None:
         anchor.avatar = avatar
     if country is not None:
@@ -184,6 +190,7 @@ async def update_anchor(
         "anchor": {
             "user_id": anchor.user_id,
             "nickname": anchor.nickname,
+            "age": anchor.age,
             "avatar": anchor.avatar,
             "country": anchor.country,
             "language_name": anchor.language_name,

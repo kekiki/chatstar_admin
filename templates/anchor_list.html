@@ -23,6 +23,7 @@
                     <th>主播ID</th>
                     <th>头像</th>
                     <th>昵称</th>
+                    <th>年龄</th>
                     <th>国家</th>
                     <th>语言</th>
                     <th>关注数</th>
@@ -45,6 +46,7 @@
                         {% endif %}
                     </td>
                     <td>{{ item.nickname or '-' }}</td>
+                    <td>{{ item.age or '-' }}</td>
                     <td>{{ item.country or '-' }}</td>
                     <td>{{ item.language_name or item.language_code or '-' }}</td>
                     <td>{{ item.follow_count }}</td>
@@ -68,6 +70,7 @@
                         <button type="button" class="btn btn-sm btn-warning edit-anchor-btn"
                                 data-user_id="{{ item.user_id }}"
                                 data-nickname="{{ item.nickname or '' }}"
+                                data-age="{{ item.age or '' }}"
                                 data-avatar="{{ item.avatar or '' }}"
                                 data-country="{{ item.country or '' }}"
                                 data-language_name="{{ item.language_name or '' }}"
@@ -114,6 +117,10 @@
                         <div class="col-md-6">
                             <label>昵称</label>
                             <input type="text" name="nickname" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>年龄</label>
+                            <input type="text" name="age" class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label>国家</label>
@@ -184,6 +191,10 @@
                             <input type="text" name="nickname" class="form-control" required>
                         </div>
                         <div class="col-md-6">
+                            <label>年龄</label>
+                            <input type="text" name="age" class="form-control">
+                        </div>
+                        <div class="col-md-6">
                             <label>国家</label>
                             <input type="text" name="country" class="form-control">
                         </div>
@@ -242,6 +253,7 @@ function openEditAnchorModal(data) {
     const form = $('#editAnchorForm');
     form.find('[name=user_id]').val(data.user_id);
     form.find('[name=nickname]').val(data.nickname);
+    form.find('[name=age]').val(data.age);
     form.find('[name=avatar]').val(data.avatar);
     form.find('[name=country]').val(data.country);
     form.find('[name=language_name]').val(data.language_name);
@@ -266,6 +278,7 @@ $(document).on('click', '.edit-anchor-btn', function() {
     openEditAnchorModal({
         user_id: button.data('user_id'),
         nickname: button.data('nickname'),
+        age: button.data('age'),
         avatar: button.data('avatar'),
         country: button.data('country'),
         language_name: button.data('language_name'),
@@ -347,6 +360,7 @@ $('#submitAddAnchor').click(async function() {
     
     const payload = {
         nickname: form.find('[name=nickname]').val(),
+        age: form.find('[name=age]').val(),
         avatar: form.find('[name=avatar]').val(),
         country: form.find('[name=country]').val(),
         language_name: form.find('[name=language_name]').val(),
@@ -398,6 +412,7 @@ $('#submitEditAnchor').click(async function() {
     const payload = {
         user_id: Number(form.find('[name=user_id]').val()),
         nickname: form.find('[name=nickname]').val(),
+        age: form.find('[name=age]').val(),
         avatar: form.find('[name=avatar]').val(),
         country: form.find('[name=country]').val(),
         language_name: form.find('[name=language_name]').val(),

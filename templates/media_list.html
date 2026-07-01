@@ -36,9 +36,9 @@
                     <td>{{ item.user_id }}</td>
                     <td>
                         {% if item.cover %}
-                        <img src="{{ item.cover }}" alt="封面" style="width: 100px; height: 100px;">
+                        <img src="{{ item.cover }}" alt="封面" style="width: 100px; height: 100px; object-fit: contain;">
                         {% elif item.url %}
-                        <img src="{{ item.url }}" alt="图片" style="width: 100px; height: 100px;">
+                        <img src="{{ item.url }}" alt="图片" style="width: 100px; height: 100px; object-fit: contain;">
                         {% else %}
                         <span class="text-muted">无</span>
                         {% endif %}
@@ -87,10 +87,10 @@
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/anchor?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
+                    <a class="page-link" href="/admin/media?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
                 </li>
                 <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/anchor?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
+                    <a class="page-link" href="/admin/media?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
                 </li>
             </ul>
         </nav>
@@ -202,11 +202,11 @@ function openeditMediaModal(data) {
     
     // 显示现有媒体预览
     if (data.is_video) {
-        $('#editMediaPreview').html(`<video src="${data.url}" style="width: 160px; height: 160px;" controls></video>`);
+        $('#editMediaPreview').html(`<video src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;" controls></video>`);
     } else if (data.cover) {
-        $('#editMediaPreview').html(`<img src="${data.cover}" style="width: 160px; height: 160px;">`);
+        $('#editMediaPreview').html(`<img src="${data.cover}" style="width: 160px; height: 160px; object-fit: contain;">`);
     } else if (data.url) {
-        $('#editMediaPreview').html(`<img src="${data.url}" style="width: 160px; height: 160px;">`);
+        $('#editMediaPreview').html(`<img src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;">`);
     } else {
         $('#editMediaPreview').html('');
     }
@@ -271,9 +271,9 @@ async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
             console.log('Upload response:', data);
             // 显示预览
             if (file.type.startsWith('video/')) {
-                $(previewId).html(`<video src="${data.url}" style="width: 160px; height: 160px;" controls></video>`);
+                $(previewId).html(`<video src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;" controls></video>`);
             } else {
-                $(previewId).html(`<img src="${data.url}" style="width: 160px; height: 160px;">`);
+                $(previewId).html(`<img src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;">`);
             }
             // 设置隐藏字段
             $(urlInputId).val(data.url);

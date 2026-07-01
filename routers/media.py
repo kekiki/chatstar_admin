@@ -12,7 +12,7 @@ from aws_s3_client import AWSS3Client
 
 # Optional import for video thumbnail generation
 try:
-    from moviepy.editor import VideoFileClip
+    from moviepy.video.io.VideoFileClip import VideoFileClip
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False

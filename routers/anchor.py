@@ -24,7 +24,7 @@ async def anchor_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = db.query(models.Anchor).order_by(models.Anchor.created_at.desc())
+    q = db.query(models.Anchor).order_by(models.Anchor.created_time.desc())
 
     if keyword:
         q = q.filter(

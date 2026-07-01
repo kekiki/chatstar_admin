@@ -384,7 +384,7 @@ $('#submitAddAnchor').click(async function() {
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
-            alert(data.msg);
+            // alert(data.msg);
             const addModal = bootstrap.Modal.getInstance(document.getElementById('addAnchorModal'));
             if (addModal) {
                 addModal.hide();
@@ -436,7 +436,7 @@ $('#submitEditAnchor').click(async function() {
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
-            alert(data.msg);
+            // alert(data.msg);
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editAnchorModal'));
             if (editModal) {
                 editModal.hide();

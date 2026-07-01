@@ -324,7 +324,7 @@ $('#submitAddMedia').click(async function() {
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
-            alert(data.msg);
+            // alert(data.msg);
             const addModal = bootstrap.Modal.getInstance(document.getElementById('addMediaModal'));
             if (addModal) {
                 addModal.hide();
@@ -371,7 +371,7 @@ $('#submitEditAnchor').click(async function() {
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
-            alert(data.msg);
+            // alert(data.msg);
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editMediaModal'));
             if (editModal) {
                 editModal.hide();

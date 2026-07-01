@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, Query, Body, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, cast, String
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
@@ -75,7 +75,7 @@ async def media_list(
     if keyword:
         q = q.filter(
             or_(
-                models.Media.user_id.like(f"%{keyword}%"),
+                cast(models.Media.user_id, String).like(f"%{keyword}%"),
             )
         )
 

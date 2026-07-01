@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, Query, Body, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, cast, String
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
@@ -29,7 +29,7 @@ async def anchor_list(
     if keyword:
         q = q.filter(
             or_(
-                models.Anchor.user_id.like(f"%{keyword}%"),
+                cast(models.Anchor.user_id, String).like(f"%{keyword}%"),
                 models.Anchor.nickname.like(f"%{keyword}%"),
                 models.Anchor.country.like(f"%{keyword}%"),
                 models.Anchor.language_name.like(f"%{keyword}%"),

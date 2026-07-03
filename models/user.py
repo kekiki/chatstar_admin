@@ -24,3 +24,4 @@ class AppUser(Base):
     fans_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     is_check = Column(Boolean, default=False)
+    agent = Column(String(255), default="")

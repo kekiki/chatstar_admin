@@ -402,9 +402,9 @@ $('#submitAddAnchor').click(async function() {
 $('#submitEditAnchor').click(async function() {
     const form = $('#editAnchorForm');
     
-    // 如果选择了文件但还没上传，先上传
+    // 如果选择了新头像文件，先上传
     const fileInput = form.find('[name=avatar_file]')[0];
-    if (fileInput.files.length > 0 && !form.find('[name=avatar]').val()) {
+    if (fileInput.files.length > 0) {
         const avatarUrl = await uploadAvatar(fileInput, '#editAvatarPreview', '#editAvatarUrl');
         if (!avatarUrl) return;
     }

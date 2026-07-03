@@ -9,6 +9,7 @@ import models
 import os
 import tempfile
 from aws_s3_client import AWSS3Client
+from image_utils import compress_image
 
 # Optional import for video thumbnail generation
 try:
@@ -107,8 +108,23 @@ async def upload_media(
         file_bytes = await file.read()
         file_content_type = file.content_type
 
+        # 如果是图片，先进行缩放/压缩/转码，尽量减小体积并保持清晰度
+        upload_bytes = file_bytes
+        upload_content_type = file_content_type
+        upload_filename = file.filename
+        if file_content_type and file_content_type.startswith('image/'):
+            try:
+                comp = compress_image(file_bytes, max_width=1080, quality=85)
+                upload_bytes = comp.get("bytes", file_bytes)
+                upload_content_type = comp.get("content_type", file_content_type)
+                base = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename
+                ext = comp.get("ext") or (file.filename.rsplit('.', 1)[-1] if '.' in file.filename else '')
+                upload_filename = f"{base}.{ext}" if ext else upload_filename
+            except Exception as e:
+                print(f"Image compress failed, will upload original: {e}")
+
         aws_s3_client = AWSS3Client()
-        link_info = aws_s3_client.upload_and_get_link(file_bytes, file.filename, file_content_type)
+        link_info = aws_s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
         
         cover_url = None
         # 如果是视频，自动生成封面

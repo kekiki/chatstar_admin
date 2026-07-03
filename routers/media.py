@@ -66,6 +66,8 @@ async def media_list(
     page: int = Query(1),
     page_size: int = Query(10),
     keyword: str = Query("", description="全字段模糊搜索"),
+    is_video: str = Query(None, description="是否视频筛选, true/false"),
+    is_vip: str = Query(None, description="是否VIP筛选, true/false"),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
@@ -80,12 +82,28 @@ async def media_list(
             )
         )
 
+    # 处理 is_video 筛选
+    if is_video is not None and is_video != "":
+        if str(is_video).lower() in ("1", "true", "yes"):
+            q = q.filter(models.Media.is_video == True)
+        elif str(is_video).lower() in ("0", "false", "no"):
+            q = q.filter(models.Media.is_video == False)
+
+    # 处理 is_vip 筛选
+    if is_vip is not None and is_vip != "":
+        if str(is_vip).lower() in ("1", "true", "yes"):
+            q = q.filter(models.Media.is_vip == True)
+        elif str(is_vip).lower() in ("0", "false", "no"):
+            q = q.filter(models.Media.is_vip == False)
+
     page_data = paginate_query(db, q, offset, page_size)
     return templates.TemplateResponse(request, "media_list.html", {
         "request": request,
         "active_menu": "media",
         "page_data": page_data,
-        "keyword": keyword
+        "keyword": keyword,
+        "is_video": is_video,
+        "is_vip": is_vip
     })
 
 @router.post("/admin/api/upload_media")

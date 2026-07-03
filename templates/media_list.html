@@ -10,6 +10,22 @@
         <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="用户ID">
     </div>
     <div class="col-auto">
+        <label>是否视频</label>
+        <select name="is_video" class="form-select">
+            <option value="" {% if not is_video %}selected{% endif %}>全部</option>
+            <option value="true" {% if is_video is not none and is_video|string|lower in ['true','1','yes'] %}selected{% endif %}>是</option>
+            <option value="false" {% if is_video is not none and is_video|string|lower in ['false','0','no'] %}selected{% endif %}>否</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <label>是否VIP</label>
+        <select name="is_vip" class="form-select">
+            <option value="" {% if not is_vip %}selected{% endif %}>全部</option>
+            <option value="true" {% if is_vip is not none and is_vip|string|lower in ['true','1','yes'] %}selected{% endif %}>是</option>
+            <option value="false" {% if is_vip is not none and is_vip|string|lower in ['false','0','no'] %}selected{% endif %}>否</option>
+        </select>
+    </div>
+    <div class="col-auto">
         <button class="btn btn-primary">查询</button>
         <a href="/admin/media" class="btn btn-outline-secondary">重置</a>
     </div>
@@ -57,7 +73,6 @@
                         <span class="badge bg-secondary">否</span>
                         {% endif %}
                     </td>
-                    <td>{{ item.created_time }}</td>
                     <td>
                         {% if item.created_time %}
                         {{ item.created_time.strftime("%Y-%m-%d %H:%M:%S") }}
@@ -87,10 +102,10 @@
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/media?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
+                    <a class="page-link" href="/admin/media?keyword={{ keyword }}&is_video={{ is_video or '' }}&is_vip={{ is_vip or '' }}&page={{ page_data.page-1 }}">上一页</a>
                 </li>
                 <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/media?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
+                    <a class="page-link" href="/admin/media?keyword={{ keyword }}&is_video={{ is_video or '' }}&is_vip={{ is_vip or '' }}&page={{ page_data.page+1 }}">下一页</a>
                 </li>
             </ul>
         </nav>

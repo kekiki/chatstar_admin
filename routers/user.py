@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, Query, Body
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, cast, String
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
@@ -43,9 +43,9 @@ async def user_list(
     if keyword:
         q = q.filter(
             or_(
-                models.AppUser.user_id.like(f"%{keyword}%"),
+                cast(models.AppUser.user_id, String).like(f"%{keyword}%"),
                 models.AppUser.device_id.like(f"%{keyword}%"),
-                models.AppUser.app_id.like(f"%{keyword}%"),
+                cast(models.AppUser.app_id, String).like(f"%{keyword}%"),
                 models.AppUser.nickname.like(f"%{keyword}%"),
                 models.AppUser.email.like(f"%{keyword}%"),
                 models.AppUser.google_id.like(f"%{keyword}%")

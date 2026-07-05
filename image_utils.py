@@ -2,7 +2,7 @@ from io import BytesIO
 from PIL import Image
 import os
 
-def compress_image(image_bytes: bytes, max_width: int = 1080, quality: int = 85, prefer_webp: bool = True) -> dict:
+def compress_image(image_bytes: bytes, max_width: int = 480, quality: int = 85, prefer_webp: bool = True) -> dict:
     """
     在上传前压缩/转码图片：
     - 若宽度超过 `max_width`，按比例缩放到 `max_width`。

@@ -132,7 +132,7 @@ async def upload_media(
         upload_filename = file.filename
         if file_content_type and file_content_type.startswith('image/'):
             try:
-                comp = compress_image(file_bytes, max_width=1080, quality=85)
+                comp = compress_image(file_bytes, max_width=480, quality=85)
                 upload_bytes = comp.get("bytes", file_bytes)
                 upload_content_type = comp.get("content_type", file_content_type)
                 base = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename

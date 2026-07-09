@@ -40,11 +40,11 @@
                     <td>{{ item.user_id }}</td>
                     <td>
                         {% for app in apps %}
-                        {% if app.id == item.app_id %}
+                        {% if app.package_name == item.package_name %}
                         {{ app.app_name }} ({{ app.package_name }})
                         {% endif %}
                         {% endfor %}
-                        {% if item.app_id == 0 %}无{% endif %}
+                        {% if item.package_name == '' %}无{% endif %}
                     </td>
                     <td>
                         {% if item.avatar %}

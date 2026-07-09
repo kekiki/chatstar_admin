@@ -45,7 +45,7 @@ async def user_list(
             or_(
                 cast(models.AppUser.user_id, String).like(f"%{keyword}%"),
                 models.AppUser.device_id.like(f"%{keyword}%"),
-                cast(models.AppUser.app_id, String).like(f"%{keyword}%"),
+                models.AppUser.package_name.like(f"%{keyword}%"),
                 models.AppUser.nickname.like(f"%{keyword}%"),
                 models.AppUser.email.like(f"%{keyword}%"),
                 models.AppUser.google_id.like(f"%{keyword}%")

@@ -1,8 +1,7 @@
 import os
-from typing import Optional
 
 # 数据库配置
-DATABASE_URL: str = os.getenv('DATABASE_URL', 'sqlite:///./chatstar_data.db')
+DATABASE_URL: str = os.getenv('DATABASE_URL', 'sqlite:///./../chatstar_data.db')
 
 # JWT 认证配置
 SECRET_KEY: str = os.getenv('SECRET_KEY', 'default-secret-key')

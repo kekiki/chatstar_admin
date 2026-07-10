@@ -27,7 +27,7 @@ chatstar_admin/
 │   ├── anchor_list.html      # 主播列表
 │   ├── order_list.html       # 订单列表
 │   ├── app_list.html         # 应用列表
-│   └── app_config.html       # 应用配置
+│   └── app_review.html       # 应用配置
 ├── static/                    # 静态文件
 ├── database.py                # 数据库配置
 ├── auth.py                    # 认证工具
@@ -78,60 +78,6 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 用户名: admin
 密码: admin123
 ```
-
-⚠️ **重要**: 首次登录后请立即修改默认密码！
-
-## 数据库模型
-
-### AdminUser (管理员)
-- id: 主键
-- username: 用户名（唯一）
-- password: 密码哈希
-- create_time: 创建时间
-
-### AppList (应用列表)
-- id: 主键
-- app_name: 应用名称
-- package_name: 包名
-- is_online: 是否上线
-
-### AppConfig (应用配置)
-- id: 主键
-- package_name: 包名
-- app_name: 应用名称
-- app_key: 应用密钥（唯一）
-- status: 状态
-- config_json: 配置JSON
-
-### AppUser (用户)
-- id: 主键
-- package_name: 包名
-- register_time: 注册时间
-- last_login: 最后登录时间
-- is_anchor: 是否主播
-
-### Anchor (主播)
-- id: 主键
-- user_id: 用户ID（外键）
-- nickname: 昵称
-- income: 收入
-
-### PayOrder (订单)
-- id: 主键
-- package_name: 包名
-- user_id: 用户ID
-- pay_amount: 支付金额
-- pay_time: 支付时间
-- status: 状态（0未支付 1已支付）
-
-### DailyStat (日统计)
-- id: 主键
-- package_name: 包名
-- stat_date: 统计日期
-- new_user: 新增用户
-- dau: 日活
-- new_pay_user: 新增付费用户
-- total_pay_money: 总付费金额
 
 ## 开发说明
 

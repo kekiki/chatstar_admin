@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>审核配置</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReviewModal">新增审核配置</button>
+</div>
+<hr>
+
+<!-- 审核配置筛选条件 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form class="row g-3" method="GET">
+            <div class="col-md-3">
+                <label class="form-label">应用</label>
+                <select name="review_package_name" class="form-select">
+                    <option value="">全部</option>
+                    {% for app in apps %}
+                    <option value="{{ app.package_name }}" {% if review_package_name == app.package_name %}selected{% endif %}>{{ app.app_name }} ({{ app.package_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">版本号</label>
+                <input type="text" name="review_app_version" class="form-control" value="{{ review_app_version }}" placeholder="版本号">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">筛选</button>
+                <a href="/admin/app_review" class="btn btn-secondary ms-2">重置</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 审核配置列表 -->
+<div class="card mb-5">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>应用</th>
+                    <th>版本</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in review_page_data.list %}
+                <tr>
+                    <td>{{ review.id }}</td>
+                    <td>
+                        {% for app in apps %}
+                        {% if app.package_name == review.package_name %}
+                        {{ app.app_name }} ({{ review.package_name }})
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ review.app_version }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-review-btn" data-id="{{ review.id }}" data-package-name="{{ review.package_name }}" data-version="{{ review.app_version }}">编辑</button>
+                        <button class="btn btn-sm btn-danger delete-review-btn" data-id="{{ review.id }}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not review_page_data['list'] %}
+                <tr>
+                    <td colspan="4" class="text-center">暂无数据</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新增审核配置弹窗 -->
+<div class="modal fade" id="addReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增审核配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addReviewForm">
+                    <div class="mb-3">
+                        <label>应用</label>
+                        <select name="package_name" class="form-select" required>
+                            <option value="">请选择应用</option>
+                            {% for app in apps %}
+                            <option value="{{ app.package_name }}">{{ app.app_name }} ({{ app.package_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>版本号</label>
+                        <input type="text" name="app_version" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddReview">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑审核配置弹窗 -->
+<div class="modal fade" id="editReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑审核配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editReviewForm">
+                    <input type="hidden" name="id" id="editReviewId">
+                    <div class="mb-3">
+                        <label>应用</label>
+                        <select name="package_name" id="editReviewPackageName" class="form-select" required>
+                            <option value="">请选择应用</option>
+                            {% for app in apps %}
+                            <option value="{{ app.package_name }}">{{ app.app_name }} ({{ app.package_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>版本号</label>
+                        <input type="text" name="app_version" id="editReviewAppVersion" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditReview">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+// 新增审核配置提交
+$("#submitAddReview").click(async function(){
+    const form = $("#addReviewForm");
+    const package_name = form.find("[name=package_name]").val();
+    const app_version = form.find("[name=app_version]").val();
+
+    if (!package_name || !app_version) {
+        alert("请填写完整信息");
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/api/add_app_review", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({package_name, app_version})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || "保存失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("保存失败，请稍后重试");
+    }
+})
+
+// 编辑审核配置弹窗
+$(".edit-review-btn").click(function(){
+    const btn = $(this);
+    $("#editReviewId").val(btn.data("id"));
+    $("#editReviewPackageName").val(btn.data("package-name"));
+    $("#editReviewAppVersion").val(btn.data("version"));
+    new bootstrap.Modal("#editReviewModal").show();
+})
+
+// 编辑审核配置提交
+$("#submitEditReview").click(async function(){
+    const form = $("#editReviewForm");
+    const id = parseInt(form.find("[name=id]").val());
+    const package_name = form.find("[name=package_name]").val();
+    const app_version = form.find("[name=app_version]").val();
+
+    if (!id || !package_name || !app_version) {
+        alert("请填写完整信息");
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/api/update_app_review", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id, package_name, app_version})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || "更新失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("更新失败，请稍后重试");
+    }
+})
+
+// 删除审核配置
+$(".delete-review-btn").click(async function(){
+    if (!confirm("确定要删除这条审核配置吗？")) return;
+
+    const id = $(this).data("id");
+    try {
+        const res = await fetch(`/admin/api/delete_app_review?id=${id}`, {
+            method: "DELETE"
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || "删除失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("删除失败，请稍后重试");
+    }
+})
+</script>
+{% endblock %}

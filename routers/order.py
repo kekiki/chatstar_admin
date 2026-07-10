@@ -32,7 +32,7 @@ async def order_list(
         q = q.filter(
             or_(
                 models.PayOrder.id.like(f"%{keyword}%"),
-                models.PayOrder.app_id.like(f"%{keyword}%"),
+                models.PayOrder.package_name.like(f"%{keyword}%"),
                 models.PayOrder.user_id.like(f"%{keyword}%"),
                 models.PayOrder.pay_amount.like(f"%{keyword}%"),
                 models.PayOrder.pay_time.like(f"%{keyword}%")
@@ -73,7 +73,7 @@ async def export_order(
         q = q.filter(
             or_(
                 models.PayOrder.id.like(f"%{keyword}%"),
-                models.PayOrder.app_id.like(f"%{keyword}%"),
+                models.PayOrder.package_name.like(f"%{keyword}%"),
                 models.PayOrder.user_id.like(f"%{keyword}%"),
                 models.PayOrder.pay_amount.like(f"%{keyword}%"),
                 models.PayOrder.pay_time.like(f"%{keyword}%")
@@ -96,7 +96,7 @@ async def export_order(
     ws.append(header)
     for od in order_list:
         stat_text = "已支付" if od.status == 1 else "未支付"
-        row = [od.id, od.app_id, od.user_id, od.pay_amount, od.pay_time, stat_text]
+        row = [od.id, od.package_name, od.user_id, od.pay_amount, od.pay_time, stat_text]
         ws.append(row)
 
     stream = io.BytesIO()

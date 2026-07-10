@@ -37,7 +37,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>订单ID</th>
-                    <th>应用ID</th>
+                    <th>应用包名</th>
                     <th>用户ID</th>
                     <th>支付金额</th>
                     <th>支付时间</th>
@@ -48,7 +48,7 @@
                 {% for item in page_data.list %}
                 <tr>
                     <td>{{ item.id }}</td>
-                    <td>{{ item.app_id }}</td>
+                    <td>{{ item.package_name }}</td>
                     <td>{{ item.user_id }}</td>
                     <td>¥{{ "%.2f"|format(item.pay_amount) }}</td>
                     <td>{{ item.pay_time }}</td>

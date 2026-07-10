@@ -95,9 +95,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 - package_name: 包名
 - is_online: 是否上线
 
-### AppInfo (应用配置)
+### AppConfig (应用配置)
 - id: 主键
-- app_id: 应用ID（外键）
+- package_name: 包名
 - app_name: 应用名称
 - app_key: 应用密钥（唯一）
 - status: 状态
@@ -105,7 +105,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ### AppUser (用户)
 - id: 主键
-- app_id: 应用ID（外键）
+- package_name: 包名
 - register_time: 注册时间
 - last_login: 最后登录时间
 - is_anchor: 是否主播
@@ -118,7 +118,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ### PayOrder (订单)
 - id: 主键
-- app_id: 应用ID（外键）
+- package_name: 包名
 - user_id: 用户ID
 - pay_amount: 支付金额
 - pay_time: 支付时间
@@ -126,7 +126,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ### DailyStat (日统计)
 - id: 主键
-- app_id: 应用ID
+- package_name: 包名
 - stat_date: 统计日期
 - new_user: 新增用户
 - dau: 日活

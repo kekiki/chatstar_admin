@@ -4,7 +4,7 @@ from database import Base
 class DailyStat(Base):
     __tablename__ = "daily_stat"
     id = Column(Integer, primary_key=True)
-    app_id = Column(Integer)
+    package_name = Column(String(100), ForeignKey("app_list.package_name"), index=True)
     stat_date = Column(String(20)) # yyyy-MM-dd
     new_user = Column(Integer, default=0) # 新增用户
     dau = Column(Integer, default=0) # 日活

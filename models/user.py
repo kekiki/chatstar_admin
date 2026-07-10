@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, String
+from sqlalchemy import Column, Integer, ForeignKey, Boolean, String
 from database import Base
 import datetime
 
@@ -7,7 +7,7 @@ class AppUser(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
     device_id = Column(String(64), index=True)
-    package_name = Column(String(64), index=True)
+    package_name = Column(String(100), ForeignKey("app_list.package_name"), index=True)
     created_time = Column(Integer, default=lambda: int(datetime.datetime.now().timestamp()))
     country = Column(String(64), default="US")
     ip = Column(String(64))

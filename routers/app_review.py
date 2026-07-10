@@ -7,6 +7,15 @@ import models
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+@router.get("/admin/app_review", response_class=HTMLResponse)
+async def app_review(request: Request, db: Session = Depends(get_db), _user=Depends(lambda: None)):
+    from routers.auth import require_login
+    _user = require_login(request, db)
+    reviews = db.query(models.AppReview).all()
+    tpl = templates.env.get_template("app_review.html")
+    content = tpl.render({"request": request, "active_menu": "app_review", "reviews": reviews})
+    return HTMLResponse(content)
+
 @router.post("/admin/api/add_app_review")
 async def add_app_review(
     request: Request,

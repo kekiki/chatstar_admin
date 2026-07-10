@@ -103,7 +103,7 @@ async def add_anchor(
     follow_count: int = Body(0),
     fans_count: int = Body(0),
     like_count: int = Body(0),
-    is_check: bool = Body(False),
+    is_review: bool = Body(False),
     db: Session = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -121,7 +121,7 @@ async def add_anchor(
         follow_count=follow_count,
         fans_count=fans_count,
         like_count=like_count,
-        is_check=is_check
+        is_review=is_review
     )
     db.add(new_anchor)
     db.commit()
@@ -140,7 +140,7 @@ async def add_anchor(
             "follow_count": new_anchor.follow_count,
             "fans_count": new_anchor.fans_count,
             "like_count": new_anchor.like_count,
-            "is_check": new_anchor.is_check
+            "is_review": new_anchor.is_review
         }
     }
 
@@ -157,7 +157,7 @@ async def update_anchor(
     follow_count: int = Body(None),
     fans_count: int = Body(None),
     like_count: int = Body(None),
-    is_check: bool = Body(None),
+    is_review: bool = Body(None),
     db: Session = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -185,8 +185,8 @@ async def update_anchor(
         anchor.fans_count = fans_count
     if like_count is not None:
         anchor.like_count = like_count
-    if is_check is not None:
-        anchor.is_check = is_check
+    if is_review is not None:
+        anchor.is_review = is_review
 
     db.commit()
     db.refresh(anchor)
@@ -204,7 +204,7 @@ async def update_anchor(
             "follow_count": anchor.follow_count,
             "fans_count": anchor.fans_count,
             "like_count": anchor.like_count,
-            "is_check": anchor.is_check
+            "is_review": anchor.is_review
         }
     }
 

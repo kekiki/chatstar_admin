@@ -72,7 +72,7 @@ async def update_user(
     country: str = Body(""),
     balance: int = Body(0),
     is_vip: bool = Body(False),
-    is_check: bool = Body(False),
+    is_review: bool = Body(False),
     db: Session = Depends(get_db),
     _user = Depends(lambda: None)
 ):
@@ -92,8 +92,8 @@ async def update_user(
         user.balance = balance
     if is_vip is not None:
         user.is_vip = is_vip
-    if is_check is not None:
-        user.is_check = is_check
+    if is_review is not None:
+        user.is_review = is_review
     
     db.commit()
     db.refresh(user)
@@ -107,6 +107,6 @@ async def update_user(
             "country": user.country,
             "balance": user.balance,
             "is_vip": user.is_vip,
-            "is_check": user.is_check,
+            "is_review": user.is_review,
         }
     }

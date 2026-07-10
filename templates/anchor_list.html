@@ -53,7 +53,7 @@
                     <td>{{ item.fans_count }}</td>
                     <td>{{ item.like_count }}</td>
                     <td>
-                        {% if item.is_check %}
+                        {% if item.is_review %}
                         <span class="badge bg-success">是</span>
                         {% else %}
                         <span class="badge bg-secondary">否</span>
@@ -78,7 +78,7 @@
                                 data-follow_count="{{ item.follow_count }}"
                                 data-fans_count="{{ item.fans_count }}"
                                 data-like_count="{{ item.like_count }}"
-                                data-is_check="{{ item.is_check }}">
+                                data-is_review="{{ item.is_review }}">
                             编辑
                         </button>
                         <button type="button" class="btn btn-sm btn-danger delete-anchor-btn" data-user_id="{{ item.user_id }}">删除</button>
@@ -155,11 +155,11 @@
                         <div class="col-md-6">
                             <p><label>审核模式</label></p>
                             <label class="radio-item me-3">
-                                <input type="radio" name="is_check" value="true">
+                                <input type="radio" name="is_review" value="true">
                                 <span>是</span>
                             </label>
                             <label class="radio-item">
-                                <input type="radio" name="is_check" value="false" checked>
+                                <input type="radio" name="is_review" value="false" checked>
                                 <span>否</span>
                             </label>
                         </div>
@@ -227,11 +227,11 @@
                         <div class="col-md-6">
                             <p><label>审核模式</label></p>
                             <label class="radio-item me-3">
-                                <input type="radio" name="is_check" value="true">
+                                <input type="radio" name="is_review" value="true">
                                 <span>是</span>
                             </label>
                             <label class="radio-item">
-                                <input type="radio" name="is_check" value="false">
+                                <input type="radio" name="is_review" value="false">
                                 <span>否</span>
                             </label>
                         </div>
@@ -261,7 +261,7 @@ function openEditAnchorModal(data) {
     form.find('[name=follow_count]').val(data.follow_count);
     form.find('[name=fans_count]').val(data.fans_count);
     form.find('[name=like_count]').val(data.like_count);
-    form.find('[name=is_check][value=' + (data.is_check ? 'true' : 'false') + ']').prop('checked', true);
+    form.find('[name=is_review][value=' + (data.is_review ? 'true' : 'false') + ']').prop('checked', true);
     
     // 显示现有头像预览
     if (data.avatar) {
@@ -286,7 +286,7 @@ $(document).on('click', '.edit-anchor-btn', function() {
         follow_count: button.data('follow_count'),
         fans_count: button.data('fans_count'),
         like_count: button.data('like_count'),
-        is_check: button.data('is_check') === true || button.data('is_check') === 'True' || button.data('is_check') === 'true'
+        is_review: button.data('is_review') === true || button.data('is_review') === 'True' || button.data('is_review') === 'true'
     });
 });
 
@@ -368,7 +368,7 @@ $('#submitAddAnchor').click(async function() {
         follow_count: Number(form.find('[name=follow_count]').val() || 0),
         fans_count: Number(form.find('[name=fans_count]').val() || 0),
         like_count: Number(form.find('[name=like_count]').val() || 0),
-        is_check: form.find('[name=is_check]:checked').val() === 'true'
+        is_review: form.find('[name=is_review]:checked').val() === 'true'
     };
 
     if (!payload.nickname) {
@@ -420,7 +420,7 @@ $('#submitEditAnchor').click(async function() {
         follow_count: Number(form.find('[name=follow_count]').val() || 0),
         fans_count: Number(form.find('[name=fans_count]').val() || 0),
         like_count: Number(form.find('[name=like_count]').val() || 0),
-        is_check: form.find('[name=is_check]:checked').val() === 'true'
+        is_review: form.find('[name=is_review]:checked').val() === 'true'
     };
 
     if (!payload.nickname) {

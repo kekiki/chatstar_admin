@@ -66,7 +66,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if item.is_check %}
+                        {% if item.is_review %}
                         <span class="badge bg-success">是</span>
                         {% else %}
                         <span class="badge bg-secondary">否</span>
@@ -88,7 +88,7 @@
                                 data-country="{{ item.country or '' }}" 
                                 data-balance="{{ item.balance }}" 
                                 data-is-vip="{{ item.is_vip }}" 
-                                data-is-check="{{ item.is_check }}">编辑</button>
+                                data-is-check="{{ item.is_review }}">编辑</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -147,7 +147,7 @@
                     </div>
                     <div class="mb-3">
                         <label>是否审核账户</label>
-                        <select name="is_check" id="editIsCheck" class="form-select">
+                        <select name="is_review" id="editIsCheck" class="form-select">
                             <option value="false">否</option>
                             <option value="true">是</option>
                         </select>
@@ -186,13 +186,13 @@ $("#submitEditUser").click(async function(){
     const country = form.find("[name=country]").val();
     const balance = parseInt(form.find("[name=balance]").val()) || 0;
     const is_vip = form.find("[name=is_vip]").val() === "true";
-    const is_check = form.find("[name=is_check]").val() === "true";
+    const is_review = form.find("[name=is_review]").val() === "true";
 
     try {
         const res = await fetch("/admin/api/update_user", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({user_id, avatar, nickname, country, balance, is_vip, is_check})
+            body: JSON.stringify({user_id, avatar, nickname, country, balance, is_vip, is_review})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {

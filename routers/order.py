@@ -18,8 +18,6 @@ async def order_list(
     page: int = Query(1),
     page_size: int = Query(10),
     keyword: str = Query("", description="全字段模糊搜索"),
-    start_date: str = Query(""),
-    end_date: str = Query(""),
     status: int = Query(-1),
     _user=Depends(lambda: None)
 ):
@@ -32,18 +30,12 @@ async def order_list(
         q = q.filter(
             or_(
                 models.PayOrder.id.like(f"%{keyword}%"),
-                models.PayOrder.package_name.like(f"%{keyword}%"),
                 models.PayOrder.user_id.like(f"%{keyword}%"),
-                models.PayOrder.pay_amount.like(f"%{keyword}%"),
-                models.PayOrder.pay_time.like(f"%{keyword}%")
+                models.PayOrder.order_no.like(f"%{keyword}%")
             )
         )
-    if start_date:
-        q = q.filter(models.PayOrder.pay_time >= start_date)
-    if end_date:
-        q = q.filter(models.PayOrder.pay_time <= f"{end_date} 23:59:59")
-    if status in (0, 1):
-        q = q.filter(models.PayOrder.status == status)
+    if status in (0, 1, 2):
+        q = q.filter(models.PayOrder.order_status == status)
 
     page_data = paginate_query(db, q, offset, page_size)
     return templates.TemplateResponse(request, "order_list.html", {
@@ -51,8 +43,6 @@ async def order_list(
         "active_menu": "order",
         "page_data": page_data,
         "keyword": keyword,
-        "start_date": start_date,
-        "end_date": end_date,
         "status": status
     })
 
@@ -61,8 +51,6 @@ async def export_order(
     request: Request,
     db: Session = Depends(get_db),
     keyword: str = Query(""),
-    start_date: str = Query(""),
-    end_date: str = Query(""),
     status: int = Query(-1),
     _user=Depends(lambda: None)
 ):
@@ -73,18 +61,12 @@ async def export_order(
         q = q.filter(
             or_(
                 models.PayOrder.id.like(f"%{keyword}%"),
-                models.PayOrder.package_name.like(f"%{keyword}%"),
                 models.PayOrder.user_id.like(f"%{keyword}%"),
-                models.PayOrder.pay_amount.like(f"%{keyword}%"),
-                models.PayOrder.pay_time.like(f"%{keyword}%")
+                models.PayOrder.order_no.like(f"%{keyword}%")
             )
         )
-    if start_date:
-        q = q.filter(models.PayOrder.pay_time >= start_date)
-    if end_date:
-        q = q.filter(models.PayOrder.pay_time <= f"{end_date} 23:59:59")
-    if status in (0, 1):
-        q = q.filter(models.PayOrder.status == status)
+    if status in (0, 1, 2):
+        q = q.filter(models.PayOrder.order_status == status)
     order_list = q.all()
 
     from openpyxl import Workbook
@@ -92,11 +74,12 @@ async def export_order(
     wb = Workbook()
     ws = wb.active
     ws.title = "订单数据"
-    header = ["订单ID", "应用ID", "用户ID", "支付金额", "支付时间", "订单状态"]
+    header = ["订单ID", "用户ID", "订单号", "创建时间", "SKU", "折扣类型", "订单状态", "货币代码", "货币价格"]
     ws.append(header)
     for od in order_list:
-        stat_text = "已支付" if od.status == 1 else "未支付"
-        row = [od.id, od.package_name, od.user_id, od.pay_amount, od.pay_time, stat_text]
+        status_text = {0: "待支付", 1: "支付成功", 2: "支付失败"}.get(od.order_status, "未知")
+        discount_text = {0: "普通折扣", 1: "首充折扣"}.get(od.discount_type, "未知")
+        row = [od.id, od.user_id, od.order_no, od.created_time, od.sku, discount_text, status_text, od.currency_code, od.currency_price]
         ws.append(row)
 
     stream = io.BytesIO()

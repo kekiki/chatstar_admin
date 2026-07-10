@@ -60,7 +60,8 @@ async def user_list(
         "page_data": page_data,
         "keyword": keyword,
         "start_date": start_date,
-        "end_date": end_date
+        "end_date": end_date,
+        "current_timestamp": int(datetime.datetime.now().timestamp())
     })
 
 @router.put("/admin/api/update_user")
@@ -71,7 +72,7 @@ async def update_user(
     nickname: str = Body(""),
     country: str = Body(""),
     balance: int = Body(0),
-    is_vip: bool = Body(False),
+    vip_expire_time: int = Body(None),
     is_review: bool = Body(False),
     db: Session = Depends(get_db),
     _user = Depends(lambda: None)
@@ -90,8 +91,8 @@ async def update_user(
         user.country = country
     if balance is not None:
         user.balance = balance
-    if is_vip is not None:
-        user.is_vip = is_vip
+    if vip_expire_time is not None:
+        user.vip_expire_time = vip_expire_time
     if is_review is not None:
         user.is_review = is_review
     
@@ -106,7 +107,7 @@ async def update_user(
             "nickname": user.nickname,
             "country": user.country,
             "balance": user.balance,
-            "is_vip": user.is_vip,
+            "vip_expire_time": user.vip_expire_time,
             "is_review": user.is_review,
         }
     }

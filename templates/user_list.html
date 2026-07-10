@@ -28,6 +28,7 @@
                     <th>语言</th>
                     <th>余额</th>
                     <th>VIP</th>
+                    <th>VIP到期</th>
                     <th>审核账户</th>
                     <th>App版本</th>
                     <th>注册时间</th>
@@ -59,10 +60,17 @@
                     <td>{{ item.language_name or '-' }}</td>
                     <td>{{ item.balance }}</td>
                     <td>
-                        {% if item.is_vip %}
+                        {% if item.vip_expire_time and item.vip_expire_time > current_timestamp %}
                         <span class="badge bg-success">是</span>
                         {% else %}
                         <span class="badge bg-secondary">否</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.vip_expire_time %}
+                        {{ item.vip_expire_time | int | datetime_format }}
+                        {% else %}
+                        -
                         {% endif %}
                     </td>
                     <td>
@@ -82,12 +90,12 @@
                     </td>
                     <td>
                         <button class="btn btn-sm btn-warning edit-user-btn" 
-                                data-id="{{ item.user_id }}" 
+                                data-user-id="{{ item.user_id }}" 
                                 data-avatar="{{ item.avatar or '' }}" 
                                 data-nickname="{{ item.nickname or '' }}" 
                                 data-country="{{ item.country or '' }}" 
                                 data-balance="{{ item.balance }}" 
-                                data-is-vip="{{ item.is_vip }}" 
+                                data-vip-expire-time="{{ item.vip_expire_time or 0 }}" 
                                 data-is-check="{{ item.is_review }}">编辑</button>
                     </td>
                 </tr>
@@ -121,7 +129,7 @@
             </div>
             <div class="modal-body">
                 <form id="editUserForm">
-                    <input type="hidden" name="id" id="editUserId">
+                    <input type="hidden" name="user_id" id="editUserId">
                     <div class="mb-3">
                         <label>头像URL</label>
                         <input type="text" name="avatar" id="editAvatar" class="form-control">
@@ -139,11 +147,8 @@
                         <input type="number" name="balance" id="editBalance" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label>是否VIP</label>
-                        <select name="is_vip" id="editIsVip" class="form-select">
-                            <option value="false">否</option>
-                            <option value="true">是</option>
-                        </select>
+                        <label>VIP到期时间</label>
+                        <input type="datetime-local" name="vip_expire_time" id="editVipExpireTime" class="form-control" placeholder="请选择VIP到期时间">
                     </div>
                     <div class="mb-3">
                         <label>是否审核账户</label>
@@ -164,16 +169,37 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+function toDatetimeLocal(timestamp) {
+    if (!timestamp || timestamp <= 0) {
+        return "";
+    }
+    const date = new Date(timestamp * 1000);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60000);
+    return localDate.toISOString().slice(0, 16);
+}
+
+function fromDatetimeLocal(value) {
+    if (!value) {
+        return 0;
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return 0;
+    }
+    return Math.floor(date.getTime() / 1000);
+}
+
 // 编辑用户弹窗
 $(".edit-user-btn").click(function(){
     const btn = $(this);
-    $("#editUserId").val(btn.data("user_id"));
-    $("#editAvatar").val(btn.data("avatar"));
-    $("#editNickname").val(btn.data("nickname"));
-    $("#editCountry").val(btn.data("country"));
-    $("#editBalance").val(btn.data("balance"));
-    $("#editIsVip").val(btn.data("is-vip").toString());
-    $("#editIsCheck").val(btn.data("is-check").toString());
+    $("#editUserId").val(btn.attr("data-user-id"));
+    $("#editAvatar").val(btn.attr("data-avatar"));
+    $("#editNickname").val(btn.attr("data-nickname"));
+    $("#editCountry").val(btn.attr("data-country"));
+    $("#editBalance").val(btn.attr("data-balance"));
+    $("#editVipExpireTime").val(toDatetimeLocal(btn.attr("data-vip-expire-time")));
+    $("#editIsCheck").val(btn.attr("data-is-check").toString());
     new bootstrap.Modal("#editUserModal").show();
 })
 
@@ -185,14 +211,14 @@ $("#submitEditUser").click(async function(){
     const nickname = form.find("[name=nickname]").val();
     const country = form.find("[name=country]").val();
     const balance = parseInt(form.find("[name=balance]").val()) || 0;
-    const is_vip = form.find("[name=is_vip]").val() === "true";
+    const vip_expire_time = fromDatetimeLocal(form.find("[name=vip_expire_time]").val());
     const is_review = form.find("[name=is_review]").val() === "true";
 
     try {
         const res = await fetch("/admin/api/update_user", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({user_id, avatar, nickname, country, balance, is_vip, is_review})
+            body: JSON.stringify({user_id, avatar, nickname, country, balance, vip_expire_time, is_review})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {

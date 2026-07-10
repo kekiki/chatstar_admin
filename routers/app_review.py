@@ -1,20 +1,46 @@
 from fastapi import APIRouter, Request, Depends, Body, Query
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import get_db
+from tools import get_page_params, paginate_query
 import models
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 @router.get("/admin/app_review", response_class=HTMLResponse)
-async def app_review(request: Request, db: Session = Depends(get_db), _user=Depends(lambda: None)):
+async def app_review(
+    request: Request,
+    db: Session = Depends(get_db),
+    page: int = Query(1),
+    page_size: int = Query(10),
+    review_package_name: str = Query(None, description="审核配置-应用筛选"),
+    review_app_version: str = Query("", description="审核配置-版本筛选"),
+    _user=Depends(lambda: None)
+):
     from routers.auth import require_login
     _user = require_login(request, db)
-    reviews = db.query(models.AppReview).all()
-    tpl = templates.env.get_template("app_review.html")
-    content = tpl.render({"request": request, "active_menu": "app_review", "reviews": reviews})
-    return HTMLResponse(content)
+    apps = db.query(models.AppList).all()
+
+    page, page_size, offset = get_page_params(page, page_size)
+    review_q = db.query(models.AppReview)
+
+    if review_package_name:
+        review_q = review_q.filter(models.AppReview.package_name == review_package_name)
+    if review_app_version:
+        review_q = review_q.filter(models.AppReview.app_version.like(f"%{review_app_version}%"))
+
+    review_page_data = paginate_query(db, review_q, offset, page_size)
+
+    return templates.TemplateResponse(request, "app_review.html", {
+        "request": request,
+        "active_menu": "app_review",
+        "apps": apps,
+        "review_page_data": review_page_data,
+        "review_package_name": review_package_name,
+        "review_app_version": review_app_version
+    })
 
 @router.post("/admin/api/add_app_review")
 async def add_app_review(

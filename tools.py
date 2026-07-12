@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Query
 
 def get_page_params(
@@ -8,9 +9,15 @@ def get_page_params(
     offset = (page - 1) * page_size
     return page, page_size, offset
 
-def paginate_query(db: Session, query, offset, page_size):
-    total = query.count()
-    data = query.limit(page_size).offset(offset).all()
+async def paginate_query(db: AsyncSession, query, offset, page_size):
+    count_stmt = select(func.count()).select_from(query.order_by(None).subquery())
+    total_result = await db.execute(count_stmt)
+    total = total_result.scalar_one()
+
+    page_stmt = query.limit(page_size).offset(offset)
+    result = await db.execute(page_stmt)
+    data = result.scalars().all()
+
     total_page = (total + page_size - 1) // page_size
     return {
         "list": data,

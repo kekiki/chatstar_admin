@@ -1,13 +1,8 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from database import get_db, engine, Base
 from config import APP_TITLE, APP_HOST, APP_PORT
-import models
 from routers import auth_router, dashboard_router, user_router, anchor_router, order_router, app_list_router, app_review_router, media_router
-
-# 创建数据表（首次运行自动建表）
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=APP_TITLE)
 app.add_middleware(

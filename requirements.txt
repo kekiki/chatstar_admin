@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-sqlalchemy
+sqlalchemy[asyncio]
 pymysql
 python-jose
 passlib[bcrypt]
@@ -13,5 +13,7 @@ psycopg2-binary
 Pillow
 requests
 boto3
+botocore
 uuid
 moviepy
+asyncpg

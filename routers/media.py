@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Request, Depends, Query, Body, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, cast, String
+from sqlalchemy import select, or_, cast, String
+from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import os
 import tempfile
-from aws_s3_client import AWSS3Client
+from s3_client import AWSS3Client
 from image_utils import compress_image
 
 # Optional import for video thumbnail generation
@@ -62,7 +62,7 @@ def generate_video_thumbnail(video_bytes, filename):
 @router.get("/admin/media", response_class=HTMLResponse)
 async def media_list(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     page: int = Query(1),
     page_size: int = Query(10),
     keyword: str = Query("", description="全字段模糊搜索"),
@@ -73,10 +73,10 @@ async def media_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = db.query(models.Media).order_by(models.Media.created_time.desc())
+    q = select(models.Media).order_by(models.Media.created_time.desc())
 
     if keyword:
-        q = q.filter(
+        q = q.where(
             or_(
                 cast(models.Media.user_id, String).like(f"%{keyword}%"),
             )
@@ -92,11 +92,11 @@ async def media_list(
     # 处理 is_vip 筛选
     if is_vip is not None and is_vip != "":
         if str(is_vip).lower() in ("1", "true", "yes"):
-            q = q.filter(models.Media.is_vip == True)
+            q = q.where(models.Media.is_vip == True)
         elif str(is_vip).lower() in ("0", "false", "no"):
-            q = q.filter(models.Media.is_vip == False)
+            q = q.where(models.Media.is_vip == False)
 
-    page_data = paginate_query(db, q, offset, page_size)
+    page_data = await paginate_query(db, q, offset, page_size)
     return templates.TemplateResponse(request, "media_list.html", {
         "request": request,
         "active_menu": "media",
@@ -110,11 +110,10 @@ async def media_list(
 async def upload_media(
     request: Request,
     file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from database import get_db
-    db = next(get_db())
     _user = require_login(request, db)
     
     # 检查文件类型
@@ -141,8 +140,8 @@ async def upload_media(
             except Exception as e:
                 print(f"Image compress failed, will upload original: {e}")
 
-        aws_s3_client = AWSS3Client()
-        link_info = aws_s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
+        s3_client = AWSS3Client()
+        link_info = await s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
         
         cover_url = None
         # 如果是视频，自动生成封面
@@ -152,7 +151,7 @@ async def upload_media(
             if thumbnail_bytes:
                 print(f"Thumbnail generated successfully, uploading...")
                 thumbnail_filename = f"thumb_{file.filename.rsplit('.', 1)[0]}.jpg"
-                cover_info = aws_s3_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
+                cover_info = await s3_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
                 cover_url = cover_info["url"]
                 print(f"Thumbnail uploaded: {cover_url}")
             else:
@@ -175,7 +174,7 @@ async def add_media(
     user_id: int = Body(0),
     is_vip: bool = Body(False),
     is_video: bool = Body(False),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
@@ -188,8 +187,8 @@ async def add_media(
         is_video=is_video
     )
     db.add(new_media)
-    db.commit()
-    db.refresh(new_media)
+    await db.commit()
+    await db.refresh(new_media)
     return {
         "code": 200,
         "msg": "新增成功",
@@ -212,12 +211,14 @@ async def update_media(
     cover: str = Body(None),
     is_vip: bool = Body(False),
     is_video: bool = Body(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    media = db.query(models.Media).filter(models.Media.id == id).first()
+    stmt = select(models.Media).where(models.Media.id == id)
+    result = await db.execute(stmt)
+    media = result.scalar_one_or_none()
     if not media:
         return {"code": 404, "msg": "媒体不存在"}
 
@@ -232,8 +233,8 @@ async def update_media(
     if is_video is not None:
         media.is_video = is_video
 
-    db.commit()
-    db.refresh(media)
+    await db.commit()
+    await db.refresh(media)
     return {
         "code": 200,
         "msg": "更新成功",
@@ -251,14 +252,16 @@ async def update_media(
 async def delete_media(
     request: Request,
     id: int = Query(...),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    media = db.query(models.Media).filter(models.Media.id == id).first()
+    stmt = select(models.Media).where(models.Media.id == id)
+    result = await db.execute(stmt)
+    media = result.scalar_one_or_none()
     if not media:
         return {"code": 404, "msg": "媒体不存在"}
     db.delete(media)
-    db.commit()
+    await db.commit()
     return {"code": 200, "msg": "删除成功"}

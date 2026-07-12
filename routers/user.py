@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, Depends, Query, Body
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, cast, String
+from sqlalchemy import select, or_, cast, String
+from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
@@ -26,7 +26,7 @@ templates.env.filters["datetime_format"] = datetime_format
 @router.get("/admin/user", response_class=HTMLResponse)
 async def user_list(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     page: int = Query(1),
     page_size: int = Query(10),
     keyword: str = Query("", description="全字段模糊搜索"),
@@ -36,12 +36,14 @@ async def user_list(
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    apps = db.query(models.AppList).all()
+    apps_stmt = select(models.AppList)
+    apps_result = await db.execute(apps_stmt)
+    apps = apps_result.scalars().all()
     page, page_size, offset = get_page_params(page, page_size)
-    q = db.query(models.AppUser)
+    q = select(models.AppUser)
 
     if keyword:
-        q = q.filter(
+        q = q.where(
             or_(
                 cast(models.AppUser.user_id, String).like(f"%{keyword}%"),
                 models.AppUser.device_id.like(f"%{keyword}%"),
@@ -52,7 +54,7 @@ async def user_list(
             )
         )
 
-    page_data = paginate_query(db, q, offset, page_size)
+    page_data = await paginate_query(db, q, offset, page_size)
     return templates.TemplateResponse(request, "user_list.html", {
         "request": request,
         "active_menu": "user",
@@ -74,12 +76,14 @@ async def update_user(
     balance: int = Body(0),
     vip_expire_time: int = Body(None),
     is_review: bool = Body(False),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    user = db.query(models.AppUser).filter(models.AppUser.user_id == user_id).first()
+    stmt = select(models.AppUser).where(models.AppUser.user_id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     if not user:
         return {"code": 404, "msg": "用户不存在"}
     
@@ -96,8 +100,8 @@ async def update_user(
     if is_review is not None:
         user.is_review = is_review
     
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return {
         "code": 200,
         "msg": "更新成功",

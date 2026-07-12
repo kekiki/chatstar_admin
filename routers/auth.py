@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import auth
 from database import get_db
 
@@ -9,7 +10,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 # 全局鉴权依赖，未登录跳转登录页
-def require_login(request: Request, db: Session = Depends(get_db)):
+def require_login(request: Request, db: AsyncSession = Depends(get_db)):
     from typing import Optional
     token: Optional[str] = request.cookies.get("admin_token")
     if not token:
@@ -30,10 +31,12 @@ async def login_submit(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     import models
-    admin = db.query(models.AdminUser).filter(models.AdminUser.username == username).first()
+    stmt = select(models.AdminUser).where(models.AdminUser.username == username)
+    result = await db.execute(stmt)
+    admin = result.scalar_one_or_none()
     if not admin or not auth.verify_password(password, admin.password):
         tpl = templates.env.get_template("login.html")
         content = tpl.render({"request": request, "msg": "账号密码错误"})

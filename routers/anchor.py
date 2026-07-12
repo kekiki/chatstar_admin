@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Request, Depends, Query, Body, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, cast, String
+from sqlalchemy import select, or_, cast, String
+from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import random
-from aws_s3_client import AWSS3Client
+from s3_client import AWSS3Client
 from image_utils import compress_image
 
 router = APIRouter()
@@ -16,7 +16,7 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/admin/anchor", response_class=HTMLResponse)
 async def anchor_list(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     page: int = Query(1),
     page_size: int = Query(10),
     keyword: str = Query("", description="全字段模糊搜索"),
@@ -25,10 +25,10 @@ async def anchor_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = db.query(models.Anchor).order_by(models.Anchor.created_time.desc())
+    q = select(models.Anchor).order_by(models.Anchor.created_time.desc())
 
     if keyword:
-        q = q.filter(
+        q = q.where(
             or_(
                 cast(models.Anchor.user_id, String).like(f"%{keyword}%"),
                 models.Anchor.nickname.like(f"%{keyword}%"),
@@ -38,7 +38,7 @@ async def anchor_list(
             )
         )
 
-    page_data = paginate_query(db, q, offset, page_size)
+    page_data = await paginate_query(db, q, offset, page_size)
     return templates.TemplateResponse(request, "anchor_list.html", {
         "request": request,
         "active_menu": "anchor",
@@ -50,11 +50,10 @@ async def anchor_list(
 async def upload_avatar(
     request: Request,
     file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
-    from database import get_db
-    db = next(get_db())
     _user = require_login(request, db)
     
     # 检查文件类型
@@ -71,7 +70,7 @@ async def upload_avatar(
         upload_filename = file.filename
         if file_content_type and file_content_type.startswith('image/'):
             try:
-                comp = compress_image(file_bytes, max_width=1080, quality=85)
+                comp = compress_image(file_bytes, max_width=480, quality=85)
                 upload_bytes = comp.get("bytes", file_bytes)
                 upload_content_type = comp.get("content_type", file_content_type)
                 base = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename
@@ -80,8 +79,8 @@ async def upload_avatar(
             except Exception as e:
                 print(f"Avatar compress failed, uploading original image: {e}")
 
-        aws_s3_client = AWSS3Client()
-        link_info = aws_s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
+        s3_client = AWSS3Client()
+        link_info = await s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
         
         return {
             "code": 200,
@@ -104,7 +103,7 @@ async def add_anchor(
     fans_count: int = Body(0),
     like_count: int = Body(0),
     is_review: bool = Body(False),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
@@ -124,8 +123,8 @@ async def add_anchor(
         is_review=is_review
     )
     db.add(new_anchor)
-    db.commit()
-    db.refresh(new_anchor)
+    await db.commit()
+    await db.refresh(new_anchor)
     return {
         "code": 200,
         "msg": "新增成功",
@@ -158,12 +157,14 @@ async def update_anchor(
     fans_count: int = Body(None),
     like_count: int = Body(None),
     is_review: bool = Body(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    anchor = db.query(models.Anchor).filter(models.Anchor.user_id == user_id).first()
+    stmt = select(models.Anchor).where(models.Anchor.user_id == user_id)
+    result = await db.execute(stmt)
+    anchor = result.scalar_one_or_none()
     if not anchor:
         return {"code": 404, "msg": "主播不存在"}
 
@@ -188,8 +189,8 @@ async def update_anchor(
     if is_review is not None:
         anchor.is_review = is_review
 
-    db.commit()
-    db.refresh(anchor)
+    await db.commit()
+    await db.refresh(anchor)
     return {
         "code": 200,
         "msg": "更新成功",
@@ -212,14 +213,16 @@ async def update_anchor(
 async def delete_anchor(
     request: Request,
     user_id: int = Query(...),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    anchor = db.query(models.Anchor).filter(models.Anchor.user_id == user_id).first()
+    stmt = select(models.Anchor).where(models.Anchor.user_id == user_id)
+    result = await db.execute(stmt)
+    anchor = result.scalar_one_or_none()
     if not anchor:
         return {"code": 404, "msg": "主播不存在"}
     db.delete(anchor)
-    db.commit()
+    await db.commit()
     return {"code": 200, "msg": "删除成功"}

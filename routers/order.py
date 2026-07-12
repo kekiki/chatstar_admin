@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, Depends, Query, Body
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from tools import get_page_params, paginate_query
 import models
@@ -14,7 +14,7 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/admin/order", response_class=HTMLResponse)
 async def order_list(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     page: int = Query(1),
     page_size: int = Query(10),
     keyword: str = Query("", description="全字段模糊搜索"),
@@ -24,10 +24,10 @@ async def order_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = db.query(models.PayOrder)
+    q = select(models.PayOrder)
 
     if keyword:
-        q = q.filter(
+        q = q.where(
             or_(
                 models.PayOrder.id.like(f"%{keyword}%"),
                 models.PayOrder.user_id.like(f"%{keyword}%"),
@@ -35,9 +35,9 @@ async def order_list(
             )
         )
     if status in (0, 1, 2):
-        q = q.filter(models.PayOrder.order_status == status)
+        q = q.where(models.PayOrder.order_status == status)
 
-    page_data = paginate_query(db, q, offset, page_size)
+    page_data = await paginate_query(db, q, offset, page_size)
     return templates.TemplateResponse(request, "order_list.html", {
         "request": request,
         "active_menu": "order",
@@ -49,16 +49,16 @@ async def order_list(
 @router.get("/admin/order/export")
 async def export_order(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     keyword: str = Query(""),
     status: int = Query(-1),
     _user=Depends(lambda: None)
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    q = db.query(models.PayOrder)
+    q = select(models.PayOrder)
     if keyword:
-        q = q.filter(
+        q = q.where(
             or_(
                 models.PayOrder.id.like(f"%{keyword}%"),
                 models.PayOrder.user_id.like(f"%{keyword}%"),
@@ -66,8 +66,9 @@ async def export_order(
             )
         )
     if status in (0, 1, 2):
-        q = q.filter(models.PayOrder.order_status == status)
-    order_list = q.all()
+        q = q.where(models.PayOrder.order_status == status)
+    result = await db.execute(q)
+    order_list = result.scalars().all()
 
     from openpyxl import Workbook
 

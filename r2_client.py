@@ -1,6 +1,5 @@
-import os
+
 import uuid
-import requests
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
@@ -8,9 +7,9 @@ from config import R2_ACCESS_KEY, R2_SECRET_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME, 
 import httpx
 from fastapi import HTTPException
 
-class AWSS3Client:
+class R2Client:
     def __init__(self):
-        self.s3_client = boto3.client(
+        self.r2_client = boto3.client(
             's3',
             aws_access_key_id=R2_ACCESS_KEY,
             aws_secret_access_key=R2_SECRET_KEY,
@@ -36,7 +35,6 @@ class AWSS3Client:
                 },
                 timeout=10
             )
-            print(resp.json())
             if resp.status_code != 200:
                 raise HTTPException(status_code=500, detail="获取R2上传直链失败")
 
@@ -45,7 +43,7 @@ class AWSS3Client:
     # 后端PUT上传示例
     async def upload_bytes(self, file_bytes: str, object_key: str):
         try:
-            self.s3_client.put_object(
+            self.r2_client.put_object(
                 Bucket=R2_BUCKET_NAME,
                 Key=object_key,
                 Body=file_bytes
@@ -57,12 +55,12 @@ class AWSS3Client:
     
     # 删除桶内文件
     def delete_file(self, object_key: str):
-        self.s3_client.delete_object(Bucket=self.bucket_name, Key=object_key)
+        self.r2_client.delete_object(Bucket=self.bucket_name, Key=object_key)
     
     # 判断文件是否存在
     def file_exists(self, object_key: str) -> bool:
         try:
-            self.s3_client.head_object(Bucket=self.bucket_name, Key=object_key)
+            self.r2_client.head_object(Bucket=self.bucket_name, Key=object_key)
             return True
         except ClientError:
             return False
@@ -76,17 +74,10 @@ class AWSS3Client:
 
     async def upload_and_get_link(self, file_bytes: bytes, file_name: str, file_content_type: str) -> dict:
         """上传文件并返回下载链接"""
-        # data = await self.get_r2_upload_url(self.get_unique_key(file_name), file_content_type)
-        # print('get_r2_upload_url:')
-        # print(data)
-        # upload_url = data.get("uploadUrl")
-        # public_url = data.get("publicUrl")
-        # if not upload_url or not public_url:
-        #     raise RuntimeError("Worker 返回数据缺失 uploadUrl/publicUrl")
-
         object_key = f'uploads/{self.get_unique_key(file_name)}'
         public_url = await self.upload_bytes(file_bytes, object_key)
         return {
-            "url": public_url
+            "url": public_url,
+            "object_key": object_key
         }
         

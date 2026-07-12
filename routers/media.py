@@ -8,7 +8,7 @@ from tools import get_page_params, paginate_query
 import models
 import os
 import tempfile
-from s3_client import AWSS3Client
+from r2_client import R2Client
 from image_utils import compress_image
 
 # Optional import for video thumbnail generation
@@ -140,8 +140,8 @@ async def upload_media(
             except Exception as e:
                 print(f"Image compress failed, will upload original: {e}")
 
-        s3_client = AWSS3Client()
-        link_info = await s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
+        r2_client = R2Client()
+        link_info = await r2_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
         
         cover_url = None
         # 如果是视频，自动生成封面
@@ -151,7 +151,7 @@ async def upload_media(
             if thumbnail_bytes:
                 print(f"Thumbnail generated successfully, uploading...")
                 thumbnail_filename = f"thumb_{file.filename.rsplit('.', 1)[0]}.jpg"
-                cover_info = await s3_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
+                cover_info = await r2_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
                 cover_url = cover_info["url"]
                 print(f"Thumbnail uploaded: {cover_url}")
             else:

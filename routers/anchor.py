@@ -7,7 +7,7 @@ from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import random
-from s3_client import AWSS3Client
+from r2_client import R2Client
 from image_utils import compress_image
 
 router = APIRouter()
@@ -79,8 +79,8 @@ async def upload_avatar(
             except Exception as e:
                 print(f"Avatar compress failed, uploading original image: {e}")
 
-        s3_client = AWSS3Client()
-        link_info = await s3_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
+        r2_client = R2Client()
+        link_info = await r2_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
         
         return {
             "code": 200,

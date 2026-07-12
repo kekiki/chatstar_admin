@@ -3,12 +3,6 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import APP_TITLE, APP_HOST, APP_PORT
 from routers import auth_router, dashboard_router, user_router, anchor_router, order_router, app_list_router, app_review_router, media_router
-from database import init_db_tables
-
-@app.on_event("startup")
-async def startup():
-    """Initialize database tables on startup."""
-    await init_db_tables()
 
 app = FastAPI(title=APP_TITLE)
 app.add_middleware(

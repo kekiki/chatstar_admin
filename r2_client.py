@@ -3,7 +3,7 @@ import uuid
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from config import R2_ACCESS_KEY, R2_SECRET_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME, R2_ENDPOINT, WORKER_API_URL, R2_DEV_PUB_URL
+from config import R2_ACCESS_KEY, R2_SECRET_KEY, R2_ACCOUNT_ID, R2_BUCKET_NAME, R2_ENDPOINT, WORKER_API_URL, R2_PUBLIC_DOMAIN
 import httpx
 from fastapi import HTTPException
 
@@ -41,6 +41,17 @@ class R2Client:
         return resp.json()
 
     # 后端PUT上传示例
+    async def put_file_to_r2(self, upload_url, file_bytes, content_type):
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            resp = await client.put(
+                upload_url,
+                content=file_bytes,
+                headers={"Content-Type": content_type}
+            )
+            return resp
+
+
+    # 后端PUT上传示例
     async def upload_bytes(self, file_bytes: str, object_key: str):
         try:
             self.r2_client.put_object(
@@ -48,7 +59,7 @@ class R2Client:
                 Key=object_key,
                 Body=file_bytes
             )
-            file_url = f"{R2_DEV_PUB_URL}/{object_key}"
+            file_url = f"{R2_PUBLIC_DOMAIN}/{object_key}"
             return file_url
         except Exception as e:
             raise HTTPException(500, f"R2上传失败: {str(e)}")
@@ -80,4 +91,16 @@ class R2Client:
             "url": public_url,
             "object_key": object_key
         }
-        
+
+
+        # data: dict = await self.get_r2_upload_url(self.get_unique_key(file_name), file_content_type)
+        # uploadUrl = data.get('uploadUrl')
+        # publicUrl = data.get('publicUrl')
+        # fileKey = data.get('fileKey')
+        # resp = await self.put_file_to_r2(uploadUrl, file_bytes, file_content_type)
+        # print(str(resp))
+
+        # return {
+        #     "url": publicUrl,
+        #     "object_key": fileKey
+        # }

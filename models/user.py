@@ -21,3 +21,23 @@ class AppUser(Base):
     language_code = Column(String(16), default="en")
     is_review = Column(Boolean, default=False)
     agent = Column(String(255), default="")
+    birthday = Column(Integer, default=lambda: int(datetime.datetime.now().timestamp() - 86400 * 365 * 25))
+
+    # Review flag
+    is_review = Column(Boolean, default=False)
+
+    # Install referrer tracking
+    install_referrer = Column(String(255))
+    referrer_click_timestamp_seconds = Column(Integer)
+    install_begin_timestamp_seconds = Column(Integer)
+    referrer_click_timestamp_server_seconds = Column(Integer)
+    install_begin_timestamp_server_seconds = Column(Integer)
+    install_version = Column(String(64))
+    google_play_instant = Column(Boolean, default=False)
+    password = Column(String(255))
+
+    @property
+    def is_vip(self):
+        now_ts = int(datetime.datetime.now().timestamp())
+        return self.vip_expire_time is not None and self.vip_expire_time > now_ts
+

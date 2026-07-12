@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import APP_TITLE, APP_HOST, APP_PORT

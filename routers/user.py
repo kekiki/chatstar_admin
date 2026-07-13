@@ -7,6 +7,7 @@ from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import datetime
+from typing import Optional, Union
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -115,9 +116,9 @@ async def update_user(
     balance: int = Body(0),
     vip_expire_time: int = Body(None),
     is_review: bool = Body(False),
-    account_status: int = Body(None),
-    ip_status: int = Body(None),
-    device_status: int = Body(None),
+    account_status: Optional[Union[int, str]] = Body(None),
+    ip_status: Optional[Union[int, str]] = Body(None),
+    device_status: Optional[Union[int, str]] = Body(None),
     db: AsyncSession = Depends(get_db),
     _user = Depends(lambda: None)
 ):
@@ -143,6 +144,20 @@ async def update_user(
         user.is_review = is_review
 
     # Handle account status
+    def parse_status(value):
+        if value == "":
+            return ""
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return value
+
+    account_status = parse_status(account_status)
+    ip_status = parse_status(ip_status)
+    device_status = parse_status(device_status)
+
     if account_status is not None:
         if account_status == "":
             # Remove from black/white list

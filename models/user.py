@@ -36,8 +36,3 @@ class AppUser(Base):
     google_play_instant = Column(Boolean, default=False)
     password = Column(String(255))
 
-    @property
-    def is_vip(self):
-        now_ts = int(datetime.datetime.now().timestamp())
-        return self.vip_expire_time is not None and self.vip_expire_time > now_ts
-

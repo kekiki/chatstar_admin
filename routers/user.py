@@ -55,6 +55,45 @@ async def user_list(
         )
 
     page_data = await paginate_query(db, q, offset, page_size)
+
+    # Fetch black/white status data
+    user_ids = [user.user_id for user in page_data["list"]]
+    device_ids = [user.device_id for user in page_data["list"] if user.device_id]
+    ips = [user.ip for user in page_data["list"] if user.ip]
+
+    # Fetch account status
+    account_status_map = {}
+    if user_ids:
+        bw_user_stmt = select(models.BlackWhiteUser).where(models.BlackWhiteUser.user_id.in_(user_ids))
+        bw_user_result = await db.execute(bw_user_stmt)
+        bw_users = bw_user_result.scalars().all()
+        for bw_user in bw_users:
+            account_status_map[bw_user.user_id] = bw_user.status
+
+    # Fetch device status
+    device_status_map = {}
+    if device_ids:
+        bw_device_stmt = select(models.BlackWhiteDevice).where(models.BlackWhiteDevice.device_id.in_(device_ids))
+        bw_device_result = await db.execute(bw_device_stmt)
+        bw_devices = bw_device_result.scalars().all()
+        for bw_device in bw_devices:
+            device_status_map[bw_device.device_id] = bw_device.status
+
+    # Fetch IP status
+    ip_status_map = {}
+    if ips:
+        bw_ip_stmt = select(models.BlackWhiteIp).where(models.BlackWhiteIp.ip.in_(ips))
+        bw_ip_result = await db.execute(bw_ip_stmt)
+        bw_ips = bw_ip_result.scalars().all()
+        for bw_ip in bw_ips:
+            ip_status_map[bw_ip.ip] = bw_ip.status
+
+    # Add status info to each user
+    for user in page_data["list"]:
+        user.account_status = account_status_map.get(user.user_id, None)  # None means normal
+        user.device_status = device_status_map.get(user.device_id, None) if user.device_id else None
+        user.ip_status = ip_status_map.get(user.ip, None) if user.ip else None
+
     return templates.TemplateResponse(request, "user_list.html", {
         "request": request,
         "active_menu": "user",
@@ -76,6 +115,9 @@ async def update_user(
     balance: int = Body(0),
     vip_expire_time: int = Body(None),
     is_review: bool = Body(False),
+    account_status: int = Body(None),
+    ip_status: int = Body(None),
+    device_status: int = Body(None),
     db: AsyncSession = Depends(get_db),
     _user = Depends(lambda: None)
 ):
@@ -86,7 +128,7 @@ async def update_user(
     user = result.scalar_one_or_none()
     if not user:
         return {"code": 404, "msg": "用户不存在"}
-    
+
     if avatar is not None:
         user.avatar = avatar
     if nickname is not None:
@@ -99,7 +141,67 @@ async def update_user(
         user.vip_expire_time = vip_expire_time
     if is_review is not None:
         user.is_review = is_review
-    
+
+    # Handle account status
+    if account_status is not None:
+        if account_status == "":
+            # Remove from black/white list
+            bw_user_stmt = select(models.BlackWhiteUser).where(models.BlackWhiteUser.user_id == user_id)
+            bw_user_result = await db.execute(bw_user_stmt)
+            bw_user = bw_user_result.scalar_one_or_none()
+            if bw_user:
+                await db.delete(bw_user)
+        else:
+            # Update or insert
+            bw_user_stmt = select(models.BlackWhiteUser).where(models.BlackWhiteUser.user_id == user_id)
+            bw_user_result = await db.execute(bw_user_stmt)
+            bw_user = bw_user_result.scalar_one_or_none()
+            if bw_user:
+                bw_user.status = account_status
+            else:
+                bw_user = models.BlackWhiteUser(user_id=user_id, status=account_status)
+                db.add(bw_user)
+
+    # Handle IP status
+    if ip_status is not None and user.ip:
+        if ip_status == "":
+            # Remove from black/white list
+            bw_ip_stmt = select(models.BlackWhiteIp).where(models.BlackWhiteIp.ip == user.ip)
+            bw_ip_result = await db.execute(bw_ip_stmt)
+            bw_ip = bw_ip_result.scalar_one_or_none()
+            if bw_ip:
+                await db.delete(bw_ip)
+        else:
+            # Update or insert
+            bw_ip_stmt = select(models.BlackWhiteIp).where(models.BlackWhiteIp.ip == user.ip)
+            bw_ip_result = await db.execute(bw_ip_stmt)
+            bw_ip = bw_ip_result.scalar_one_or_none()
+            if bw_ip:
+                bw_ip.status = ip_status
+            else:
+                bw_ip = models.BlackWhiteIp(ip=user.ip, status=ip_status)
+                db.add(bw_ip)
+
+    # Handle device status
+    if device_status is not None and user.device_id:
+        if device_status == "":
+            # Remove from black/white list
+            bw_device_stmt = select(models.BlackWhiteDevice).where(models.BlackWhiteDevice.device_id == user.device_id)
+            bw_device_result = await db.execute(bw_device_stmt)
+            bw_device = bw_device_result.scalar_one_or_none()
+            if bw_device:
+                await db.delete(bw_device)
+        else:
+            # Update or insert
+            bw_device_stmt = select(models.BlackWhiteDevice).where(models.BlackWhiteDevice.device_id == user.device_id)
+            bw_device_result = await db.execute(bw_device_stmt)
+            bw_device = bw_device_result.scalar_one_or_none()
+            if bw_device:
+                bw_device.status = device_status
+            else:
+                bw_device = models.BlackWhiteDevice(device_id=user.device_id, status=device_status)
+                db.add(bw_device)
+
     await db.commit()
     await db.refresh(user)
     return {
@@ -114,4 +216,31 @@ async def update_user(
             "vip_expire_time": user.vip_expire_time,
             "is_review": user.is_review,
         }
+    }
+
+@router.put("/admin/api/change_password")
+async def change_password(
+    request: Request,
+    user_id: int = Body(...),
+    new_password: str = Body(...),
+    db: AsyncSession = Depends(get_db),
+    _user = Depends(lambda: None)
+):
+    from routers.auth import require_login
+    import hashlib
+    _user = require_login(request, db)
+    stmt = select(models.AppUser).where(models.AppUser.user_id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        return {"code": 404, "msg": "用户不存在"}
+
+    # Hash the password (using MD5 as it seems to be the existing method)
+    user.password = hashlib.md5(new_password.encode()).hexdigest()
+
+    await db.commit()
+    await db.refresh(user)
+    return {
+        "code": 200,
+        "msg": "密码修改成功"
     }

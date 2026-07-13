@@ -17,3 +17,5 @@ botocore
 uuid
 moviepy
 asyncpg
+httpx
+greenlet

@@ -31,6 +31,9 @@
                     <th>VIP到期</th>
                     <th>审核账户</th>
                     <th>App版本</th>
+                    <th>账户状态</th>
+                    <th>IP状态</th>
+                    <th>设备状态</th>
                     <th>注册时间</th>
                     <th>操作</th>
                 </tr>
@@ -82,6 +85,45 @@
                     </td>
                     <td>{{ item.agent or '-' }}</td>
                     <td>
+                        {% if item.account_status is none %}
+                        <span class="badge bg-success">正常</span>
+                        {% elif item.account_status == 0 %}
+                        <span class="badge bg-warning">审核</span>
+                        {% elif item.account_status == 1 %}
+                        <span class="badge bg-danger">黑名单</span>
+                        {% elif item.account_status == 2 %}
+                        <span class="badge bg-info">白名单</span>
+                        {% else %}
+                        <span class="badge bg-secondary">未知</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.ip_status is none %}
+                        <span class="badge bg-success">正常</span>
+                        {% elif item.ip_status == 0 %}
+                        <span class="badge bg-warning">审核</span>
+                        {% elif item.ip_status == 1 %}
+                        <span class="badge bg-danger">黑名单</span>
+                        {% elif item.ip_status == 2 %}
+                        <span class="badge bg-info">白名单</span>
+                        {% else %}
+                        <span class="badge bg-secondary">未知</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.device_status is none %}
+                        <span class="badge bg-success">正常</span>
+                        {% elif item.device_status == 0 %}
+                        <span class="badge bg-warning">审核</span>
+                        {% elif item.device_status == 1 %}
+                        <span class="badge bg-danger">黑名单</span>
+                        {% elif item.device_status == 2 %}
+                        <span class="badge bg-info">白名单</span>
+                        {% else %}
+                        <span class="badge bg-secondary">未知</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if item.created_time %}
                         {{ item.created_time | int | datetime_format }}
                         {% else %}
@@ -89,14 +131,19 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-warning edit-user-btn" 
-                                data-user-id="{{ item.user_id }}" 
-                                data-avatar="{{ item.avatar or '' }}" 
-                                data-nickname="{{ item.nickname or '' }}" 
-                                data-country="{{ item.country or '' }}" 
-                                data-balance="{{ item.balance }}" 
-                                data-vip-expire-time="{{ item.vip_expire_time or 0 }}" 
-                                data-is-check="{{ item.is_review }}">编辑</button>
+                        <button class="btn btn-sm btn-warning edit-user-btn"
+                                data-user-id="{{ item.user_id }}"
+                                data-avatar="{{ item.avatar or '' }}"
+                                data-nickname="{{ item.nickname or '' }}"
+                                data-country="{{ item.country or '' }}"
+                                data-balance="{{ item.balance }}"
+                                data-vip-expire-time="{{ item.vip_expire_time or 0 }}"
+                                data-is-check="{{ item.is_review }}"
+                                data-account-status="{{ item.account_status }}"
+                                data-ip-status="{{ item.ip_status }}"
+                                data-device-status="{{ item.device_status }}">编辑</button>
+                        <button class="btn btn-sm btn-info change-password-btn ms-1"
+                                data-user-id="{{ item.user_id }}">修改密码</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -157,11 +204,67 @@
                             <option value="true">是</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label>账户状态</label>
+                        <select name="account_status" id="editAccountStatus" class="form-select">
+                            <option value="">正常</option>
+                            <option value="0">审核</option>
+                            <option value="1">黑名单</option>
+                            <option value="2">白名单</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>IP状态</label>
+                        <select name="ip_status" id="editIpStatus" class="form-select">
+                            <option value="">正常</option>
+                            <option value="0">审核</option>
+                            <option value="1">黑名单</option>
+                            <option value="2">白名单</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>设备状态</label>
+                        <select name="device_status" id="editDeviceStatus" class="form-select">
+                            <option value="">正常</option>
+                            <option value="0">审核</option>
+                            <option value="1">黑名单</option>
+                            <option value="2">白名单</option>
+                        </select>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                 <button class="btn btn-success" id="submitEditUser">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">修改密码</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <input type="hidden" name="user_id" id="changePasswordUserId">
+                    <div class="mb-3">
+                        <label>新密码</label>
+                        <input type="password" name="new_password" id="newPassword" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>确认密码</label>
+                        <input type="password" name="confirm_password" id="confirmPassword" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitChangePassword">保存</button>
             </div>
         </div>
     </div>
@@ -200,6 +303,9 @@ $(".edit-user-btn").click(function(){
     $("#editBalance").val(btn.attr("data-balance"));
     $("#editVipExpireTime").val(toDatetimeLocal(btn.attr("data-vip-expire-time")));
     $("#editIsCheck").val(btn.attr("data-is-check").toString());
+    $("#editAccountStatus").val(btn.attr("data-account-status") || "");
+    $("#editIpStatus").val(btn.attr("data-ip-status") || "");
+    $("#editDeviceStatus").val(btn.attr("data-device-status") || "");
     new bootstrap.Modal("#editUserModal").show();
 })
 
@@ -213,12 +319,15 @@ $("#submitEditUser").click(async function(){
     const balance = parseInt(form.find("[name=balance]").val()) || 0;
     const vip_expire_time = fromDatetimeLocal(form.find("[name=vip_expire_time]").val());
     const is_review = form.find("[name=is_review]").val() === "true";
+    const account_status = form.find("[name=account_status]").val();
+    const ip_status = form.find("[name=ip_status]").val();
+    const device_status = form.find("[name=device_status]").val();
 
     try {
         const res = await fetch("/admin/api/update_user", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({user_id, avatar, nickname, country, balance, vip_expire_time, is_review})
+            body: JSON.stringify({user_id, avatar, nickname, country, balance, vip_expire_time, is_review, account_status, ip_status, device_status})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
@@ -230,6 +339,53 @@ $("#submitEditUser").click(async function(){
     } catch (error) {
         console.error(error);
         alert("更新失败，请稍后重试");
+    }
+})
+
+// 修改密码弹窗
+$(".change-password-btn").click(function(){
+    const btn = $(this);
+    $("#changePasswordUserId").val(btn.attr("data-user-id"));
+    $("#newPassword").val("");
+    $("#confirmPassword").val("");
+    new bootstrap.Modal("#changePasswordModal").show();
+})
+
+// 修改密码提交
+$("#submitChangePassword").click(async function(){
+    const form = $("#changePasswordForm");
+    const user_id = parseInt(form.find("[name=user_id]").val());
+    const new_password = form.find("[name=new_password]").val();
+    const confirm_password = form.find("[name=confirm_password]").val();
+
+    if (!new_password) {
+        alert("请输入新密码");
+        return;
+    }
+    if (new_password !== confirm_password) {
+        alert("两次输入的密码不一致");
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/api/change_password", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({user_id, new_password})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+            if (modal) {
+                modal.hide();
+            }
+        } else {
+            alert(data.msg || "修改失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("修改失败，请稍后重试");
     }
 })
 </script>

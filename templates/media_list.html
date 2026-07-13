@@ -267,15 +267,19 @@ $(document).on('click', '.delete-media-btn', async function() {
 async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
     const file = fileInput.files[0];
     if (!file) return null;
-    
+
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
         alert('请选择图片或视频文件');
         return null;
     }
-    
+
     const formData = new FormData();
     formData.append('file', file);
-    
+
+    // 显示加载状态
+    $(previewId).html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">上传中...</span></div>');
+    fileInput.disabled = true;
+
     try {
         const res = await fetch('/admin/api/upload_media', {
             method: 'POST',
@@ -296,14 +300,19 @@ async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
                 $(coverInputId).val(data.cover || '');
                 console.log('Cover set to:', data.cover);
             }
+            fileInput.disabled = false;
             return data.url;
         } else {
             alert(data.msg || '上传失败');
+            $(previewId).html('');
+            fileInput.disabled = false;
             return null;
         }
     } catch (error) {
         console.error(error);
         alert('上传失败，请稍后重试');
+        $(previewId).html('');
+        fileInput.disabled = false;
         return null;
     }
 }

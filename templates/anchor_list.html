@@ -316,15 +316,19 @@ $(document).on('click', '.delete-anchor-btn', async function() {
 async function uploadAvatar(fileInput, previewId, urlInputId) {
     const file = fileInput.files[0];
     if (!file) return null;
-    
+
     if (!file.type.startsWith('image/')) {
         alert('请选择图片文件');
         return null;
     }
-    
+
     const formData = new FormData();
     formData.append('file', file);
-    
+
+    // 显示加载状态
+    $(previewId).html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">上传中...</span></div>');
+    fileInput.disabled = true;
+
     try {
         const res = await fetch('/admin/api/upload_avatar', {
             method: 'POST',
@@ -336,14 +340,19 @@ async function uploadAvatar(fileInput, previewId, urlInputId) {
             $(previewId).html(`<img src="${data.avatar_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`);
             // 设置隐藏字段
             $(urlInputId).val(data.avatar_url);
+            fileInput.disabled = false;
             return data.avatar_url;
         } else {
             alert(data.msg || '上传失败');
+            $(previewId).html('');
+            fileInput.disabled = false;
             return null;
         }
     } catch (error) {
         console.error(error);
         alert('上传失败，请稍后重试');
+        $(previewId).html('');
+        fileInput.disabled = false;
         return null;
     }
 }

@@ -14,9 +14,41 @@
     </div>
 </form>
 <hr>
+<style>
+    .user-table {
+        font-size: 0.8rem;
+    }
+    .user-table th,
+    .user-table td {
+        white-space: nowrap;
+        vertical-align: middle;
+        padding: 0.45rem 0.6rem;
+    }
+    .user-table th {
+        font-weight: 600;
+    }
+    .user-table .ellipsis-cell {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .user-table .small-cell {
+        max-width: 80px;
+    }
+    .user-table .avatar-cell img {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .user-table .user-actions {
+        min-width: 120px;
+    }
+</style>
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 user-table">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -26,11 +58,10 @@
                     <th>国家</th>
                     <th>IP</th>
                     <th>语言</th>
-                    <th>余额</th>
-                    <th>VIP</th>
-                    <th>VIP到期</th>
-                    <th>审核账户</th>
-                    <th>App版本</th>
+                    <th class="small-cell">余额</th>
+                    <th class="small-cell">VIP</th>
+                    <th class="ellipsis-cell">VIP到期</th>
+                    <th class="ellipsis-cell">App版本</th>
                     <th>账户状态</th>
                     <th>IP状态</th>
                     <th>设备状态</th>
@@ -42,48 +73,41 @@
                 {% for item in page_data.list %}
                 <tr>
                     <td>{{ item.user_id }}</td>
-                    <td>
+                    <td class="ellipsis-cell" title="{% for app in apps %}{% if app.package_name == item.package_name %}{{ app.app_name }}{% endif %}{% endfor %}">
                         {% for app in apps %}
                         {% if app.package_name == item.package_name %}
-                        {{ app.app_name }} ({{ app.package_name }})
+                        {{ app.app_name }}
                         {% endif %}
                         {% endfor %}
                         {% if item.package_name == '' %}无{% endif %}
                     </td>
-                    <td>
+                    <td class="avatar-cell">
                         {% if item.avatar %}
-                        <img src="{{ item.avatar }}" alt="头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <img src="{{ item.avatar }}" alt="头像">
                         {% else %}
                         <span class="text-muted">无</span>
                         {% endif %}
                     </td>
-                    <td>{{ item.nickname or '-' }}</td>
-                    <td>{{ item.country or '-' }}</td>
-                    <td>{{ item.ip or '-' }}</td>
-                    <td>{{ item.language_name or '-' }}</td>
-                    <td>{{ item.balance }}</td>
-                    <td>
+                    <td class="ellipsis-cell" title="{{ item.nickname or '-' }}">{{ item.nickname or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.country or '-' }}">{{ item.country or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.ip or '-' }}">{{ item.ip or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.language_name or '-' }}">{{ item.language_name or '-' }}</td>
+                    <td class="small-cell">{{ item.balance }}</td>
+                    <td class="small-cell">
                         {% if item.vip_expire_time and item.vip_expire_time > current_timestamp %}
                         <span class="badge bg-success">是</span>
                         {% else %}
                         <span class="badge bg-secondary">否</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="ellipsis-cell">
                         {% if item.vip_expire_time %}
                         {{ item.vip_expire_time | int | datetime_format }}
                         {% else %}
                         -
                         {% endif %}
                     </td>
-                    <td>
-                        {% if item.is_review %}
-                        <span class="badge bg-success">是</span>
-                        {% else %}
-                        <span class="badge bg-secondary">否</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ item.agent or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.agent or '-' }}">{{ item.agent or '-' }}</td>
                     <td>
                         {% if item.account_status is none %}
                         <span class="badge bg-success">正常</span>
@@ -130,15 +154,13 @@
                         -
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="user-actions">
                         <button class="btn btn-sm btn-warning edit-user-btn"
                                 data-user-id="{{ item.user_id }}"
-                                data-avatar="{{ item.avatar or '' }}"
                                 data-nickname="{{ item.nickname or '' }}"
                                 data-country="{{ item.country or '' }}"
                                 data-balance="{{ item.balance }}"
                                 data-vip-expire-time="{{ item.vip_expire_time or 0 }}"
-                                data-is-check="{{ item.is_review }}"
                                 data-account-status="{{ item.account_status }}"
                                 data-ip-status="{{ item.ip_status }}"
                                 data-device-status="{{ item.device_status }}">编辑</button>
@@ -178,10 +200,6 @@
                 <form id="editUserForm">
                     <input type="hidden" name="user_id" id="editUserId">
                     <div class="mb-3">
-                        <label>头像URL</label>
-                        <input type="text" name="avatar" id="editAvatar" class="form-control">
-                    </div>
-                    <div class="mb-3">
                         <label>昵称</label>
                         <input type="text" name="nickname" id="editNickname" class="form-control">
                     </div>
@@ -196,13 +214,6 @@
                     <div class="mb-3">
                         <label>VIP到期时间</label>
                         <input type="datetime-local" name="vip_expire_time" id="editVipExpireTime" class="form-control" placeholder="请选择VIP到期时间">
-                    </div>
-                    <div class="mb-3">
-                        <label>是否审核账户</label>
-                        <select name="is_review" id="editIsCheck" class="form-select">
-                            <option value="false">否</option>
-                            <option value="true">是</option>
-                        </select>
                     </div>
                     <div class="mb-3">
                         <label>账户状态</label>
@@ -297,12 +308,10 @@ function fromDatetimeLocal(value) {
 $(".edit-user-btn").click(function(){
     const btn = $(this);
     $("#editUserId").val(btn.attr("data-user-id"));
-    $("#editAvatar").val(btn.attr("data-avatar"));
     $("#editNickname").val(btn.attr("data-nickname"));
     $("#editCountry").val(btn.attr("data-country"));
     $("#editBalance").val(btn.attr("data-balance"));
     $("#editVipExpireTime").val(toDatetimeLocal(btn.attr("data-vip-expire-time")));
-    $("#editIsCheck").val(btn.attr("data-is-check").toString());
     $("#editAccountStatus").val(btn.attr("data-account-status") || "");
     $("#editIpStatus").val(btn.attr("data-ip-status") || "");
     $("#editDeviceStatus").val(btn.attr("data-device-status") || "");
@@ -313,12 +322,10 @@ $(".edit-user-btn").click(function(){
 $("#submitEditUser").click(async function(){
     const form = $("#editUserForm");
     const user_id = parseInt(form.find("[name=user_id]").val());
-    const avatar = form.find("[name=avatar]").val();
     const nickname = form.find("[name=nickname]").val();
     const country = form.find("[name=country]").val();
     const balance = parseInt(form.find("[name=balance]").val()) || 0;
     const vip_expire_time = fromDatetimeLocal(form.find("[name=vip_expire_time]").val());
-    const is_review = form.find("[name=is_review]").val() === "true";
     const account_status = form.find("[name=account_status]").val();
     const ip_status = form.find("[name=ip_status]").val();
     const device_status = form.find("[name=device_status]").val();
@@ -327,7 +334,7 @@ $("#submitEditUser").click(async function(){
         const res = await fetch("/admin/api/update_user", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({user_id, avatar, nickname, country, balance, vip_expire_time, is_review, account_status, ip_status, device_status})
+            body: JSON.stringify({user_id, nickname, country, balance, vip_expire_time, account_status, ip_status, device_status})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {

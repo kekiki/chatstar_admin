@@ -115,7 +115,7 @@ async def update_user(
     country: str = Body(""),
     balance: int = Body(0),
     vip_expire_time: int = Body(None),
-    is_review: bool = Body(False),
+    is_review: Optional[bool] = Body(None),
     account_status: Optional[Union[int, str]] = Body(None),
     ip_status: Optional[Union[int, str]] = Body(None),
     device_status: Optional[Union[int, str]] = Body(None),

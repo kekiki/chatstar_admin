@@ -17,41 +17,41 @@
 <hr>
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 compact-table">
             <thead class="table-dark">
                 <tr>
-                    <th>主播ID</th>
+                    <th class="small-cell">主播ID</th>
                     <th>头像</th>
-                    <th>昵称</th>
-                    <th>年龄</th>
-                    <th>国家</th>
-                    <th>语言</th>
-                    <th>关注数</th>
-                    <th>粉丝数</th>
-                    <th>点赞数</th>
-                    <th>审核</th>
-                    <th>创建时间</th>
-                    <th>操作</th>
+                    <th class="ellipsis-cell">昵称</th>
+                    <th class="small-cell">年龄</th>
+                    <th class="ellipsis-cell">国家</th>
+                    <th class="ellipsis-cell">语言</th>
+                    <th class="small-cell">关注</th>
+                    <th class="small-cell">粉丝</th>
+                    <th class="small-cell">点赞</th>
+                    <th class="small-cell">审核</th>
+                    <th class="small-cell">创建时间</th>
+                    <th class="action-cell">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
                     <td>{{ item.user_id }}</td>
-                    <td>
+                    <td class="avatar-thumb">
                         {% if item.avatar %}
-                        <img src="{{ item.avatar }}" alt="头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <img src="{{ item.avatar }}" alt="头像">
                         {% else %}
                         <span class="text-muted">无</span>
                         {% endif %}
                     </td>
-                    <td>{{ item.nickname or '-' }}</td>
-                    <td>{{ item.age or '-' }}</td>
-                    <td>{{ item.country or '-' }}</td>
-                    <td>{{ item.language_name or item.language_code or '-' }}</td>
-                    <td>{{ item.follow_count }}</td>
-                    <td>{{ item.fans_count }}</td>
-                    <td>{{ item.like_count }}</td>
+                    <td class="ellipsis-cell" title="{{ item.nickname or '-' }}">{{ item.nickname or '-' }}</td>
+                    <td class="small-cell">{{ item.age or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.country or '-' }}">{{ item.country or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.language_name or item.language_code or '-' }}">{{ item.language_name or item.language_code or '-' }}</td>
+                    <td class="small-cell">{{ item.follow_count }}</td>
+                    <td class="small-cell">{{ item.fans_count }}</td>
+                    <td class="small-cell">{{ item.like_count }}</td>
                     <td>
                         {% if item.is_review %}
                         <span class="badge bg-success">是</span>

@@ -33,16 +33,16 @@
 <hr>
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 compact-table">
             <thead class="table-dark">
                 <tr>
-                    <th>ID</th>
-                    <th>用户ID</th>
+                    <th class="small-cell">ID</th>
+                    <th class="small-cell">用户ID</th>
                     <th>封面</th>
-                    <th>是否视频</th>
-                    <th>是否VIP</th>
-                    <th>创建时间</th>
-                    <th>操作</th>
+                    <th class="small-cell">视频</th>
+                    <th class="small-cell">VIP</th>
+                    <th class="small-cell">创建时间</th>
+                    <th class="action-cell">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,11 +50,11 @@
                 <tr>
                     <td>{{ item.id }}</td>
                     <td>{{ item.user_id }}</td>
-                    <td>
+                    <td class="cover-thumb">
                         {% if item.cover %}
-                        <img src="{{ item.cover }}" alt="封面" style="width: 100px; height: 100px; object-fit: contain;">
+                        <img src="{{ item.cover }}" alt="封面">
                         {% elif item.url %}
-                        <img src="{{ item.url }}" alt="图片" style="width: 100px; height: 100px; object-fit: contain;">
+                        <img src="{{ item.url }}" alt="图片">
                         {% else %}
                         <span class="text-muted">无</span>
                         {% endif %}

@@ -34,27 +34,28 @@
 <!-- 审核配置列表 -->
 <div class="card mb-5">
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 compact-table">
             <thead class="table-dark">
                 <tr>
-                    <th>ID</th>
-                    <th>应用</th>
-                    <th>版本</th>
-                    <th>操作</th>
+                    <th class="small-cell">ID</th>
+                    <th class="ellipsis-cell">应用</th>
+                    <th class="small-cell">版本</th>
+                    <th class="action-cell">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for review in review_page_data.list %}
                 <tr>
                     <td>{{ review.id }}</td>
-                    <td>
+                    <td class="ellipsis-cell" title="{% for app in apps %}{% if app.package_name == review.package_name %}{{ app.app_name }}{% endif %}{% endfor %}{{ review.package_name }}"> 
                         {% for app in apps %}
                         {% if app.package_name == review.package_name %}
-                        {{ app.app_name }} ({{ review.package_name }})
+                        {{ app.app_name }}
                         {% endif %}
                         {% endfor %}
+                        ({{ review.package_name }})
                     </td>
-                    <td>{{ review.app_version }}</td>
+                    <td class="small-cell" title="{{ review.app_version }}">{{ review.app_version }}</td>
                     <td>
                         <button class="btn btn-sm btn-warning edit-review-btn" data-id="{{ review.id }}" data-package-name="{{ review.package_name }}" data-version="{{ review.app_version }}">编辑</button>
                         <button class="btn btn-sm btn-danger delete-review-btn" data-id="{{ review.id }}">删除</button>

@@ -33,25 +33,25 @@
 <hr>
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 compact-table">
             <thead class="table-dark">
                 <tr>
-                    <th>订单ID</th>
-                    <th>应用包名</th>
-                    <th>用户ID</th>
-                    <th>支付金额</th>
-                    <th>支付时间</th>
-                    <th>订单状态</th>
+                    <th class="small-cell">订单ID</th>
+                    <th class="ellipsis-cell">应用包名</th>
+                    <th class="small-cell">用户ID</th>
+                    <th class="small-cell">金额</th>
+                    <th class="small-cell">支付时间</th>
+                    <th class="small-cell">订单状态</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
-                    <td>{{ item.id }}</td>
-                    <td>{{ item.package_name }}</td>
-                    <td>{{ item.user_id }}</td>
-                    <td>¥{{ "%.2f"|format(item.pay_amount) }}</td>
-                    <td>{{ item.pay_time }}</td>
+                    <td class="small-cell">{{ item.id }}</td>
+                    <td class="ellipsis-cell" title="{{ item.package_name }}">{{ item.package_name }}</td>
+                    <td class="small-cell">{{ item.user_id }}</td>
+                    <td class="small-cell">¥{{ "%.2f"|format(item.pay_amount) }}</td>
+                    <td class="small-cell" title="{{ item.pay_time }}">{{ item.pay_time }}</td>
                     <td>
                         {% if item.status == 1 %}
                         <span class="badge bg-success">已支付</span>

@@ -7,22 +7,22 @@
 <hr>
 <div class="card mb-4">
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 compact-table">
             <thead class="table-dark">
                 <tr>
-                    <th>应用ID</th>
-                    <th>应用名称</th>
-                    <th>包名</th>
-                    <th>上架状态</th>
-                    <th>操作</th>
+                    <th class="small-cell">应用ID</th>
+                    <th class="ellipsis-cell">应用名称</th>
+                    <th class="ellipsis-cell">包名</th>
+                    <th class="small-cell">上架</th>
+                    <th class="action-cell">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for app in apps %}
                 <tr>
                     <td>{{ app.id }}</td>
-                    <td>{{ app.app_name }}</td>
-                    <td>{{ app.package_name }}</td>
+                    <td class="ellipsis-cell" title="{{ app.app_name }}">{{ app.app_name }}</td>
+                    <td class="ellipsis-cell" title="{{ app.package_name }}">{{ app.package_name }}</td>
                     <td>
                         {% if app.is_online %}
                         <span class="badge bg-success">已上架</span>

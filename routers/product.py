@@ -55,6 +55,7 @@ async def add_product(
     vip_days: int = Body(0),
     reward_diamonds: int = Body(0),
     discount_type: int = Body(0),
+    discount: int = Body(100),
     currency_code: str = Body("USD"),
     currency_price: float = Body(0),
     call_card_num: int = Body(0),
@@ -84,6 +85,7 @@ async def add_product(
         vip_days=vip_days,
         reward_diamonds=reward_diamonds,
         discount_type=discount_type,
+        discount=discount,
         currency_code=currency_code,
         currency_price=currency_price,
         call_card_num=call_card_num,
@@ -104,6 +106,7 @@ async def add_product(
             "vip_days": new_product.vip_days,
             "reward_diamonds": new_product.reward_diamonds,
             "discount_type": new_product.discount_type,
+            "discount": new_product.discount,
             "currency_code": new_product.currency_code,
             "currency_price": new_product.currency_price,
             "call_card_num": new_product.call_card_num,
@@ -122,6 +125,7 @@ async def update_product(
     vip_days: int = Body(0),
     reward_diamonds: int = Body(0),
     discount_type: int = Body(0),
+    discount: int = Body(100),
     currency_code: str = Body("USD"),
     currency_price: float = Body(0),
     call_card_num: int = Body(0),
@@ -155,6 +159,8 @@ async def update_product(
         product.reward_diamonds = reward_diamonds
     if discount_type is not None:
         product.discount_type = discount_type
+    if discount is not None:
+        product.discount = discount
     if currency_code:
         product.currency_code = currency_code
     if currency_price is not None:
@@ -179,6 +185,7 @@ async def update_product(
             "vip_days": product.vip_days,
             "reward_diamonds": product.reward_diamonds,
             "discount_type": product.discount_type,
+            "discount": product.discount,
             "currency_code": product.currency_code,
             "currency_price": product.currency_price,
             "call_card_num": product.call_card_num,

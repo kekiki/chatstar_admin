@@ -5,7 +5,8 @@ from .anchor import router as anchor_router
 from .order import router as order_router
 from .app_list import router as app_list_router
 from .app_review import router as app_review_router
+from .product import router as product_router
 from .media import router as media_router
 
-__all__ = ['auth_router', 'dashboard_router', 'user_router', 'anchor_router', 'order_router', 'app_list_router', 'app_review_router', 'media_router']
+__all__ = ['auth_router', 'dashboard_router', 'user_router', 'anchor_router', 'order_router', 'app_list_router', 'app_review_router', 'product_router', 'media_router']
     

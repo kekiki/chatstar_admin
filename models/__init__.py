@@ -7,5 +7,6 @@ from .order import PayOrder
 from .stat import DailyStat
 from .media import Media
 from .black_white import BlackWhiteUser, BlackWhiteIp, BlackWhiteDevice
+from .product import Product
 
-__all__ = ['AdminUser', 'AppList', 'AppReview', 'AppUser', 'Anchor', 'PayOrder', 'DailyStat', 'Media', 'BlackWhiteUser', 'BlackWhiteIp', 'BlackWhiteDevice']
+__all__ = ['AdminUser', 'AppList', 'AppReview', 'AppUser', 'Anchor', 'PayOrder', 'DailyStat', 'Media', 'BlackWhiteUser', 'BlackWhiteIp', 'BlackWhiteDevice', 'Product']

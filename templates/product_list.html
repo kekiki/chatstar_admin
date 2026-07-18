@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>商品配置列表</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">新增商品</button>
+</div>
+<form action="/admin/product" method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-auto">
+        <label>全局关键词</label>
+        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="ID/包名/SKU/货币">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary">查询</button>
+        <a href="/admin/product" class="btn btn-outline-secondary">重置</a>
+    </div>
+</form>
+<hr>
+<style>
+    .product-table {
+        font-size: 0.85rem;
+    }
+    .product-table th,
+    .product-table td {
+        white-space: nowrap;
+        vertical-align: middle;
+        padding: 0.5rem 0.75rem;
+    }
+    .product-table th {
+        font-weight: 600;
+    }
+    .product-table .ellipsis-cell {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .product-table .small-cell {
+        max-width: 80px;
+    }
+</style>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0 product-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>所属应用</th>
+                    <th>SKU</th>
+                    <th>钻石</th>
+                    <th>VIP天数</th>
+                    <th>奖励钻石</th>
+                    <th>折扣类型</th>
+                    <th>货币</th>
+                    <th>价格</th>
+                    <th>通话卡</th>
+                    <th>匹配卡</th>
+                    <th>聊天卡</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_data.list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td class="ellipsis-cell" title="{% for app in apps %}{% if app.package_name == item.package_name %}{{ app.app_name }} ({{ app.package_name }}){% endif %}{% endfor %}">
+                        {% for app in apps %}
+                        {% if app.package_name == item.package_name %}
+                        {{ app.app_name }} ({{ app.package_name }})
+                        {% endif %}
+                        {% endfor %}
+                        {% if item.package_name == '' %}无{% endif %}
+                    </td>
+                    <td class="ellipsis-cell" title="{{ item.sku or '-' }}">{{ item.sku or '-' }}</td>
+                    <td class="small-cell">{{ item.diamonds or 0 }}</td>
+                    <td class="small-cell">{{ item.vip_days or 0 }}</td>
+                    <td class="small-cell">{{ item.reward_diamonds or 0 }}</td>
+                    <td class="small-cell">
+                        {% if item.discount_type == 0 %}
+                        <span class="badge bg-secondary">普通</span>
+                        {% elif item.discount_type == 1 %}
+                        <span class="badge bg-warning">首充折扣</span>
+                        {% else %}
+                        <span class="badge bg-secondary">未知</span>
+                        {% endif %}
+                    </td>
+                    <td class="small-cell">{{ item.currency_code or '-' }}</td>
+                    <td class="small-cell">{{ item.currency_price or 0 }}</td>
+                    <td class="small-cell">{{ item.call_card_num or 0 }}</td>
+                    <td class="small-cell">{{ item.match_card_num or 0 }}</td>
+                    <td class="small-cell">{{ item.chat_card_num or 0 }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-product-btn"
+                                data-id="{{ item.id }}"
+                                data-package-name="{{ item.package_name or '' }}"
+                                data-sku="{{ item.sku or '' }}"
+                                data-diamonds="{{ item.diamonds or 0 }}"
+                                data-vip-days="{{ item.vip_days or 0 }}"
+                                data-reward-diamonds="{{ item.reward_diamonds or 0 }}"
+                                data-discount-type="{{ item.discount_type or 0 }}"
+                                data-currency-code="{{ item.currency_code or 'USD' }}"
+                                data-currency-price="{{ item.currency_price or 0 }}"
+                                data-call-card-num="{{ item.call_card_num or 0 }}"
+                                data-match-card-num="{{ item.match_card_num or 0 }}"
+                                data-chat-card-num="{{ item.chat_card_num or 0 }}">编辑</button>
+                        <button class="btn btn-sm btn-danger delete-product-btn ms-1"
+                                data-id="{{ item.id }}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- 分页 -->
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_pages }} 页</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/product?keyword={{ keyword }}&page={{ page_data.page-1 }}">上一页</a>
+                </li>
+                <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/product?keyword={{ keyword }}&page={{ page_data.page+1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- 新增商品弹窗 -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增商品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label>所属应用</label>
+                        <select name="package_name" id="addPackageName" class="form-select" required>
+                            <option value="">请选择</option>
+                            {% for app in apps %}
+                            <option value="{{ app.package_name }}">{{ app.app_name }} ({{ app.package_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>SKU</label>
+                        <input type="text" name="sku" id="addSku" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>钻石数量</label>
+                        <input type="number" name="diamonds" id="addDiamonds" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>VIP天数</label>
+                        <input type="number" name="vip_days" id="addVipDays" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>奖励钻石</label>
+                        <input type="number" name="reward_diamonds" id="addRewardDiamonds" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>折扣类型</label>
+                        <select name="discount_type" id="addDiscountType" class="form-select">
+                            <option value="0">普通商品</option>
+                            <option value="1">首充折扣</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>货币代码</label>
+                        <input type="text" name="currency_code" id="addCurrencyCode" class="form-control" value="USD">
+                    </div>
+                    <div class="mb-3">
+                        <label>价格</label>
+                        <input type="number" name="currency_price" id="addCurrencyPrice" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>通话卡数量</label>
+                        <input type="number" name="call_card_num" id="addCallCardNum" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>匹配卡数量</label>
+                        <input type="number" name="match_card_num" id="addMatchCardNum" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>聊天卡数量</label>
+                        <input type="number" name="chat_card_num" id="addChatCardNum" class="form-control" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddProduct">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑商品弹窗 -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑商品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <input type="hidden" name="id" id="editProductId">
+                    <div class="mb-3">
+                        <label>所属应用</label>
+                        <select name="package_name" id="editPackageName" class="form-select" required>
+                            <option value="">请选择</option>
+                            {% for app in apps %}
+                            <option value="{{ app.package_name }}">{{ app.app_name }} ({{ app.package_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>SKU</label>
+                        <input type="text" name="sku" id="editSku" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>钻石数量</label>
+                        <input type="number" name="diamonds" id="editDiamonds" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>VIP天数</label>
+                        <input type="number" name="vip_days" id="editVipDays" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>奖励钻石</label>
+                        <input type="number" name="reward_diamonds" id="editRewardDiamonds" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>折扣类型</label>
+                        <select name="discount_type" id="editDiscountType" class="form-select">
+                            <option value="0">普通商品</option>
+                            <option value="1">首充折扣</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>货币代码</label>
+                        <input type="text" name="currency_code" id="editCurrencyCode" class="form-control" value="USD">
+                    </div>
+                    <div class="mb-3">
+                        <label>价格</label>
+                        <input type="number" name="currency_price" id="editCurrencyPrice" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>通话卡数量</label>
+                        <input type="number" name="call_card_num" id="editCallCardNum" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>匹配卡数量</label>
+                        <input type="number" name="match_card_num" id="editMatchCardNum" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>聊天卡数量</label>
+                        <input type="number" name="chat_card_num" id="editChatCardNum" class="form-control" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditProduct">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// 编辑商品弹窗
+$(".edit-product-btn").click(function(){
+    const btn = $(this);
+    $("#editProductId").val(btn.attr("data-id"));
+    $("#editPackageName").val(btn.attr("data-package-name"));
+    $("#editSku").val(btn.attr("data-sku"));
+    $("#editDiamonds").val(btn.attr("data-diamonds"));
+    $("#editVipDays").val(btn.attr("data-vip-days"));
+    $("#editRewardDiamonds").val(btn.attr("data-reward-diamonds"));
+    $("#editDiscountType").val(btn.attr("data-discount-type"));
+    $("#editCurrencyCode").val(btn.attr("data-currency-code"));
+    $("#editCurrencyPrice").val(btn.attr("data-currency-price"));
+    $("#editCallCardNum").val(btn.attr("data-call-card-num"));
+    $("#editMatchCardNum").val(btn.attr("data-match-card-num"));
+    $("#editChatCardNum").val(btn.attr("data-chat-card-num"));
+    new bootstrap.Modal("#editProductModal").show();
+})
+
+// 编辑商品提交
+$("#submitEditProduct").click(async function(){
+    const form = $("#editProductForm");
+    const id = parseInt(form.find("[name=id]").val());
+    const package_name = form.find("[name=package_name]").val();
+    const sku = form.find("[name=sku]").val();
+    const diamonds = parseInt(form.find("[name=diamonds]").val()) || 0;
+    const vip_days = parseInt(form.find("[name=vip_days]").val()) || 0;
+    const reward_diamonds = parseInt(form.find("[name=reward_diamonds]").val()) || 0;
+    const discount_type = parseInt(form.find("[name=discount_type]").val()) || 0;
+    const currency_code = form.find("[name=currency_code]").val();
+    const currency_price = parseFloat(form.find("[name=currency_price]").val()) || 0;
+    const call_card_num = parseInt(form.find("[name=call_card_num]").val()) || 0;
+    const match_card_num = parseInt(form.find("[name=match_card_num]").val()) || 0;
+    const chat_card_num = parseInt(form.find("[name=chat_card_num]").val()) || 0;
+
+    if (!package_name) {
+        alert("请选择所属应用");
+        return;
+    }
+    if (!sku) {
+        alert("请填写SKU");
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/api/update_product", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id, package_name, sku, diamonds, vip_days, reward_diamonds, discount_type, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || "更新失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("更新失败，请稍后重试");
+    }
+})
+
+// 新增商品提交
+$("#submitAddProduct").click(async function(){
+    const form = $("#addProductForm");
+    const package_name = form.find("[name=package_name]").val();
+    const sku = form.find("[name=sku]").val();
+    const diamonds = parseInt(form.find("[name=diamonds]").val()) || 0;
+    const vip_days = parseInt(form.find("[name=vip_days]").val()) || 0;
+    const reward_diamonds = parseInt(form.find("[name=reward_diamonds]").val()) || 0;
+    const discount_type = parseInt(form.find("[name=discount_type]").val()) || 0;
+    const currency_code = form.find("[name=currency_code]").val();
+    const currency_price = parseFloat(form.find("[name=currency_price]").val()) || 0;
+    const call_card_num = parseInt(form.find("[name=call_card_num]").val()) || 0;
+    const match_card_num = parseInt(form.find("[name=match_card_num]").val()) || 0;
+    const chat_card_num = parseInt(form.find("[name=chat_card_num]").val()) || 0;
+
+    if (!package_name) {
+        alert("请选择所属应用");
+        return;
+    }
+    if (!sku) {
+        alert("请填写SKU");
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/api/add_product", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({package_name, sku, diamonds, vip_days, reward_diamonds, discount_type, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            const addModal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
+            if (addModal) {
+                addModal.hide();
+            }
+            location.reload();
+        } else {
+            alert(data.msg || "新增失败");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("新增失败，请稍后重试");
+    }
+})
+
+// 删除商品
+$(document).on('click', '.delete-product-btn', async function() {
+    const id = $(this).data('id');
+    if (!confirm('确认删除该商品吗？')) {
+        return;
+    }
+    try {
+        const res = await fetch(`/admin/api/delete_product?id=${id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            alert(data.msg);
+            location.reload();
+        } else {
+            alert(data.msg || '删除失败，请重试。');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('删除失败，请稍后重试。');
+    }
+});
+</script>
+{% endblock %}

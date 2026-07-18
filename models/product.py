@@ -10,7 +10,7 @@ class Product(Base):
     __tablename__ = "app_products"
     
     id = Column(Integer, primary_key=True, index=True)
-    package_name = Column(String(100), unique=True, index=True)
+    package_name = Column(String(100), index=True)
     sku = Column(String, unique=True)
     diamonds = Column(Integer, default=0)
     vip_days = Column(Integer, default=0)

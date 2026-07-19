@@ -41,9 +41,11 @@
                     <th class="ellipsis-cell">订单号</th>
                     <th class="small-cell">用户ID</th>
                     <th class="small-cell">主播ID</th>
+                    <th class="small-cell">支付状态</th>
+                    <th class="small-cell">商品类型</th>
+                    <th class="small-cell">价值</th>
                     <th class="ellipsis-cell">支付路径</th>
                     <th class="small-cell">支付的货币类型</th>
-                    <th class="small-cell">支付的价格</th>
                     <th class="small-cell">创建时间</th>
                     <th class="small-cell">支付时间</th>
                     <th class="small-cell">APP版本</th>
@@ -52,16 +54,18 @@
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
-                    <td class="ellipsis-cell" title="{{ item.package_name }}">{{ item.package_name or '' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.package_name }}">{{ app_name_map.get(item.package_name, item.package_name) or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.transaction_no }}">{{ item.transaction_no or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.order_no }}">{{ item.order_no or '' }}</td>
                     <td class="small-cell">{{ item.user_id or '' }}</td>
                     <td class="small-cell">{{ item.anchor_id or '' }}</td>
+                    <td class="small-cell">{% if item.order_status == 1 %}已支付{% elif item.order_status == 2 %}支付失败{% else %}待支付{% endif %}</td>
+                    <td class="small-cell">{% if item.discount_type == 1 %}首充折扣{% else %}普通折扣{% endif %}</td>
+                    <td class="small-cell">{{ product_price_map.get((item.package_name, item.sku), item.currency_price) or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.path }}">{{ item.path or '' }}</td>
                     <td class="small-cell">{{ item.currency_code or '' }}</td>
-                    <td class="small-cell">{{ item.currency_price or '' }}</td>
-                    <td class="small-cell">{{ item.created_time or '' }}</td>
-                    <td class="small-cell">{{ item.updated_time or '' }}</td>
+                    <td class="small-cell">{{ item.created_time | int | datetime_format }}</td>
+                    <td class="small-cell">{{ item.updated_time | int | datetime_format }}</td>
                     <td class="small-cell">{{ item.agent or '' }}</td>
                 </tr>
                 {% endfor %}

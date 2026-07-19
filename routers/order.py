@@ -7,9 +7,21 @@ from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import io
+import datetime
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+def datetime_format(timestamp):
+    if not timestamp:
+        return ""
+    try:
+        dt = datetime.datetime.fromtimestamp(int(timestamp))
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return str(timestamp)
+
+templates.env.filters["datetime_format"] = datetime_format
 
 @router.get("/admin/order", response_class=HTMLResponse)
 async def order_list(
@@ -38,12 +50,28 @@ async def order_list(
         q = q.where(models.PayOrder.order_status == status)
 
     page_data = await paginate_query(db, q, offset, page_size)
+
+    app_result = await db.execute(select(models.AppList))
+    app_name_map = {
+        app.package_name: app.app_name
+        for app in app_result.scalars().all()
+        if getattr(app, "package_name", None)
+    }
+
+    product_result = await db.execute(select(models.Product))
+    product_price_map = {}
+    for product in product_result.scalars().all():
+        if getattr(product, "package_name", None) and getattr(product, "sku", None):
+            product_price_map[(product.package_name, product.sku)] = product.currency_price
+
     return templates.TemplateResponse(request, "order_list.html", {
         "request": request,
         "active_menu": "order",
         "page_data": page_data,
         "keyword": keyword,
-        "status": status
+        "status": status,
+        "app_name_map": app_name_map,
+        "product_price_map": product_price_map,
     })
 
 @router.get("/admin/order/export")

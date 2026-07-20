@@ -60,7 +60,7 @@
                     <td class="small-cell">{{ item.user_id or '' }}</td>
                     <td class="small-cell">{{ item.anchor_id or '' }}</td>
                     <td class="small-cell">{% if item.order_status == 1 %}已支付{% elif item.order_status == 2 %}支付失败{% else %}待支付{% endif %}</td>
-                    <td class="small-cell">{% if item.discount_type == 1 %}首充折扣{% else %}普通折扣{% endif %}</td>
+                    <td class="small-cell">{% if item.discount_type == 1 %}首充{% elif item.discount_type == 2 %}VIP{% else %}钻石{% endif %}</td>
                     <td class="small-cell">{{ product_price_map.get((item.package_name, item.sku), item.currency_price) or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.path }}">{{ item.path or '' }}</td>
                     <td class="small-cell">{{ item.currency_code or '' }}</td>

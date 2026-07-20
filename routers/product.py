@@ -72,12 +72,6 @@ async def add_product(
     if not sku:
         return {"code": 400, "msg": "请填写SKU"}
     
-    # Check if sku already exists
-    existing_stmt = select(models.Product).where(models.Product.sku == sku)
-    existing_result = await db.execute(existing_stmt)
-    if existing_result.scalar_one_or_none():
-        return {"code": 400, "msg": "SKU已存在"}
-    
     new_product = models.Product(
         package_name=package_name,
         sku=sku,
@@ -145,11 +139,6 @@ async def update_product(
     if package_name:
         product.package_name = package_name
     if sku:
-        # Check if sku already exists for other products
-        existing_stmt = select(models.Product).where(models.Product.sku == sku, models.Product.id != id)
-        existing_result = await db.execute(existing_stmt)
-        if existing_result.scalar_one_or_none():
-            return {"code": 400, "msg": "SKU已存在"}
         product.sku = sku
     if diamonds is not None:
         product.diamonds = diamonds

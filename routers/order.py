@@ -107,7 +107,7 @@ async def export_order(
     ws.append(header)
     for od in order_list:
         status_text = {0: "待支付", 1: "支付成功", 2: "支付失败"}.get(od.order_status, "未知")
-        discount_text = {0: "普通折扣", 1: "首充折扣"}.get(od.discount_type, "未知")
+        discount_text = {0: "钻石", 1: "首充", 2: "VIP"}.get(od.discount_type, "未知")
         row = [od.id, od.user_id, od.order_no, od.created_time, od.sku, discount_text, status_text, od.currency_code, od.currency_price]
         ws.append(row)
 

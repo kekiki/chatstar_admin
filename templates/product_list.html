@@ -77,9 +77,11 @@
                     <td class="small-cell">{{ item.reward_diamonds or 0 }}</td>
                     <td class="small-cell">
                         {% if item.discount_type == 0 %}
-                        <span class="badge bg-secondary">普通</span>
+                        <span class="badge bg-secondary">钻石</span>
                         {% elif item.discount_type == 1 %}
-                        <span class="badge bg-warning">首充折扣</span>
+                        <span class="badge bg-warning">首充</span>
+                        {% elif item.discount_type == 2 %}
+                        <span class="badge bg-warning">VIP</span>
                         {% else %}
                         <span class="badge bg-secondary">未知</span>
                         {% endif %}
@@ -167,8 +169,9 @@
                     <div class="mb-3">
                         <label>折扣类型</label>
                         <select name="discount_type" id="addDiscountType" class="form-select">
-                            <option value="0">普通商品</option>
-                            <option value="1">首充折扣</option>
+                            <option value="0">钻石</option>
+                            <option value="1">首充</option>
+                            <option value="2">VIP</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -242,10 +245,11 @@
                         <input type="number" name="reward_diamonds" id="editRewardDiamonds" class="form-control" value="0">
                     </div>
                     <div class="mb-3">
-                        <label>折扣类型</label>
+                        <label>商品类型</label>
                         <select name="discount_type" id="editDiscountType" class="form-select">
-                            <option value="0">普通商品</option>
-                            <option value="1">首充折扣</option>
+                            <option value="0">钻石</option>
+                            <option value="1">首充</option>
+                            <option value="1">VIP</option>
                         </select>
                     </div>
                     <div class="mb-3">

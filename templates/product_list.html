@@ -76,11 +76,11 @@
                     <td class="small-cell">{{ item.vip_days or 0 }}</td>
                     <td class="small-cell">{{ item.reward_diamonds or 0 }}</td>
                     <td class="small-cell">
-                        {% if item.discount_type == 0 %}
+                        {% if item.type == 0 %}
                         <span class="badge bg-secondary">钻石</span>
-                        {% elif item.discount_type == 1 %}
+                        {% elif item.type == 1 %}
                         <span class="badge bg-warning">首充</span>
-                        {% elif item.discount_type == 2 %}
+                        {% elif item.type == 2 %}
                         <span class="badge bg-warning">VIP</span>
                         {% else %}
                         <span class="badge bg-secondary">未知</span>
@@ -100,7 +100,7 @@
                                 data-diamonds="{{ item.diamonds or 0 }}"
                                 data-vip-days="{{ item.vip_days or 0 }}"
                                 data-reward-diamonds="{{ item.reward_diamonds or 0 }}"
-                                data-discount-type="{{ item.discount_type or 0 }}"
+                                data-discount-type="{{ item.type or 0 }}"
                                 data-discount="{{ item.discount or 100 }}"
                                 data-currency-code="{{ item.currency_code or 'USD' }}"
                                 data-currency-price="{{ item.currency_price or 0 }}"
@@ -167,8 +167,8 @@
                         <input type="number" name="reward_diamonds" id="addRewardDiamonds" class="form-control" value="0">
                     </div>
                     <div class="mb-3">
-                        <label>折扣类型</label>
-                        <select name="discount_type" id="addDiscountType" class="form-select">
+                        <label>商品类型</label>
+                        <select name="type" id="addDiscountType" class="form-select">
                             <option value="0">钻石</option>
                             <option value="1">首充</option>
                             <option value="2">VIP</option>
@@ -246,7 +246,7 @@
                     </div>
                     <div class="mb-3">
                         <label>商品类型</label>
-                        <select name="discount_type" id="editDiscountType" class="form-select">
+                        <select name="type" id="editDiscountType" class="form-select">
                             <option value="0">钻石</option>
                             <option value="1">首充</option>
                             <option value="1">VIP</option>
@@ -316,7 +316,7 @@ $("#submitEditProduct").click(async function(){
     const diamonds = parseInt(form.find("[name=diamonds]").val()) || 0;
     const vip_days = parseInt(form.find("[name=vip_days]").val()) || 0;
     const reward_diamonds = parseInt(form.find("[name=reward_diamonds]").val()) || 0;
-    const discount_type = parseInt(form.find("[name=discount_type]").val()) || 0;
+    const type = parseInt(form.find("[name=type]").val()) || 0;
     const discount = parseInt(form.find("[name=discount]").val()) || 100;
     const currency_code = form.find("[name=currency_code]").val();
     const currency_price = parseFloat(form.find("[name=currency_price]").val()) || 0;
@@ -337,7 +337,7 @@ $("#submitEditProduct").click(async function(){
         const res = await fetch("/admin/api/update_product", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id, package_name, sku, diamonds, vip_days, reward_diamonds, discount_type, discount, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
+            body: JSON.stringify({id, package_name, sku, diamonds, vip_days, reward_diamonds, type, discount, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {
@@ -360,7 +360,7 @@ $("#submitAddProduct").click(async function(){
     const diamonds = parseInt(form.find("[name=diamonds]").val()) || 0;
     const vip_days = parseInt(form.find("[name=vip_days]").val()) || 0;
     const reward_diamonds = parseInt(form.find("[name=reward_diamonds]").val()) || 0;
-    const discount_type = parseInt(form.find("[name=discount_type]").val()) || 0;
+    const type = parseInt(form.find("[name=type]").val()) || 0;
     const discount = parseInt(form.find("[name=discount]").val()) || 100;
     const currency_code = form.find("[name=currency_code]").val();
     const currency_price = parseFloat(form.find("[name=currency_price]").val()) || 0;
@@ -381,7 +381,7 @@ $("#submitAddProduct").click(async function(){
         const res = await fetch("/admin/api/add_product", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({package_name, sku, diamonds, vip_days, reward_diamonds, discount_type, discount, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
+            body: JSON.stringify({package_name, sku, diamonds, vip_days, reward_diamonds, type, discount, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
         });
         const data = await res.json();
         if (res.ok && data.code === 200) {

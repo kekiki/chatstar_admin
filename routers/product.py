@@ -54,7 +54,7 @@ async def add_product(
     diamonds: int = Body(0),
     vip_days: int = Body(0),
     reward_diamonds: int = Body(0),
-    discount_type: int = Body(0),
+    type: int = Body(0),
     discount: int = Body(100),
     currency_code: str = Body("USD"),
     currency_price: float = Body(0),
@@ -78,7 +78,7 @@ async def add_product(
         diamonds=diamonds,
         vip_days=vip_days,
         reward_diamonds=reward_diamonds,
-        discount_type=discount_type,
+        type=type,
         discount=discount,
         currency_code=currency_code,
         currency_price=currency_price,
@@ -99,7 +99,7 @@ async def add_product(
             "diamonds": new_product.diamonds,
             "vip_days": new_product.vip_days,
             "reward_diamonds": new_product.reward_diamonds,
-            "discount_type": new_product.discount_type,
+            "type": new_product.type,
             "discount": new_product.discount,
             "currency_code": new_product.currency_code,
             "currency_price": new_product.currency_price,
@@ -118,7 +118,7 @@ async def update_product(
     diamonds: int = Body(0),
     vip_days: int = Body(0),
     reward_diamonds: int = Body(0),
-    discount_type: int = Body(0),
+    type: int = Body(0),
     discount: int = Body(100),
     currency_code: str = Body("USD"),
     currency_price: float = Body(0),
@@ -146,8 +146,8 @@ async def update_product(
         product.vip_days = vip_days
     if reward_diamonds is not None:
         product.reward_diamonds = reward_diamonds
-    if discount_type is not None:
-        product.discount_type = discount_type
+    if type is not None:
+        product.type = type
     if discount is not None:
         product.discount = discount
     if currency_code:
@@ -173,7 +173,7 @@ async def update_product(
             "diamonds": product.diamonds,
             "vip_days": product.vip_days,
             "reward_diamonds": product.reward_diamonds,
-            "discount_type": product.discount_type,
+            "type": product.type,
             "discount": product.discount,
             "currency_code": product.currency_code,
             "currency_price": product.currency_price,

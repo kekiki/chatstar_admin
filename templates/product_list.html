@@ -77,9 +77,9 @@
                     <td class="small-cell">{{ item.reward_diamonds or 0 }}</td>
                     <td class="small-cell">
                         {% if item.type == 0 %}
-                        <span class="badge bg-secondary">钻石</span>
+                        <span class="badge bg-info">钻石</span>
                         {% elif item.type == 1 %}
-                        <span class="badge bg-warning">首充</span>
+                        <span class="badge bg-success">首充</span>
                         {% elif item.type == 2 %}
                         <span class="badge bg-warning">VIP</span>
                         {% else %}
@@ -100,7 +100,7 @@
                                 data-diamonds="{{ item.diamonds or 0 }}"
                                 data-vip-days="{{ item.vip_days or 0 }}"
                                 data-reward-diamonds="{{ item.reward_diamonds or 0 }}"
-                                data-discount-type="{{ item.type or 0 }}"
+                                data-product-type="{{ item.type or 0 }}"
                                 data-discount="{{ item.discount or 100 }}"
                                 data-currency-code="{{ item.currency_code or 'USD' }}"
                                 data-currency-price="{{ item.currency_price or 0 }}"
@@ -168,7 +168,7 @@
                     </div>
                     <div class="mb-3">
                         <label>商品类型</label>
-                        <select name="type" id="addDiscountType" class="form-select">
+                        <select name="type" id="addProductType" class="form-select">
                             <option value="0">钻石</option>
                             <option value="1">首充</option>
                             <option value="2">VIP</option>
@@ -246,7 +246,7 @@
                     </div>
                     <div class="mb-3">
                         <label>商品类型</label>
-                        <select name="type" id="editDiscountType" class="form-select">
+                        <select name="type" id="editProductType" class="form-select">
                             <option value="0">钻石</option>
                             <option value="1">首充</option>
                             <option value="1">VIP</option>
@@ -297,7 +297,7 @@ $(".edit-product-btn").click(function(){
     $("#editDiamonds").val(btn.attr("data-diamonds"));
     $("#editVipDays").val(btn.attr("data-vip-days"));
     $("#editRewardDiamonds").val(btn.attr("data-reward-diamonds"));
-    $("#editDiscountType").val(btn.attr("data-discount-type"));
+    $("#editProductType").val(btn.attr("data-product-type"));
     $("#editDiscount").val(btn.attr("data-discount"));
     $("#editCurrencyCode").val(btn.attr("data-currency-code"));
     $("#editCurrencyPrice").val(btn.attr("data-currency-price"));

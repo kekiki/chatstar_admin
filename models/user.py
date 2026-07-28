@@ -36,4 +36,4 @@ class AppUser(Base):
     google_play_instant = Column(Boolean, default=False)
     password = Column(String(255))
     total = Column(Integer, default=0) # 累计充值钻石数量
-
+    firebase_token = Column(String(255))

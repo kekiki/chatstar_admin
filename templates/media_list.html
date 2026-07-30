@@ -243,9 +243,6 @@ $(document).on('click', '.edit-media-btn', function() {
 
 $(document).on('click', '.delete-media-btn', async function() {
     const id = $(this).data('id');
-    if (!confirm('确认删除该媒体吗？')) {
-        return;
-    }
     try {
         const res = await fetch(`/admin/api/delete_media?id=${id}`, {
             method: 'DELETE'

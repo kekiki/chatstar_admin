@@ -403,9 +403,6 @@ $("#submitAddProduct").click(async function(){
 // 删除商品
 $(document).on('click', '.delete-product-btn', async function() {
     const id = $(this).data('id');
-    if (!confirm('确认删除该商品吗？')) {
-        return;
-    }
     try {
         const res = await fetch(`/admin/api/delete_product?id=${id}`, {
             method: 'DELETE'

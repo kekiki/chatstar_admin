@@ -239,8 +239,6 @@ $("#submitEditReview").click(async function(){
 
 // 删除审核配置
 $(".delete-review-btn").click(async function(){
-    if (!confirm("确定要删除这条审核配置吗？")) return;
-
     const id = $(this).data("id");
     try {
         const res = await fetch(`/admin/api/delete_app_review?id=${id}`, {

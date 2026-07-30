@@ -267,10 +267,6 @@
                         <label>新密码</label>
                         <input type="password" name="new_password" id="newPassword" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label>确认密码</label>
-                        <input type="password" name="confirm_password" id="confirmPassword" class="form-control" required>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -354,7 +350,6 @@ $(".change-password-btn").click(function(){
     const btn = $(this);
     $("#changePasswordUserId").val(btn.attr("data-user-id"));
     $("#newPassword").val("");
-    $("#confirmPassword").val("");
     new bootstrap.Modal("#changePasswordModal").show();
 })
 
@@ -363,14 +358,9 @@ $("#submitChangePassword").click(async function(){
     const form = $("#changePasswordForm");
     const user_id = parseInt(form.find("[name=user_id]").val());
     const new_password = form.find("[name=new_password]").val();
-    const confirm_password = form.find("[name=confirm_password]").val();
 
     if (!new_password) {
         alert("请输入新密码");
-        return;
-    }
-    if (new_password !== confirm_password) {
-        alert("两次输入的密码不一致");
         return;
     }
 

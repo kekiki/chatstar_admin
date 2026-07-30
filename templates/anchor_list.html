@@ -292,9 +292,6 @@ $(document).on('click', '.edit-anchor-btn', function() {
 
 $(document).on('click', '.delete-anchor-btn', async function() {
     const user_id = $(this).data('user_id');
-    if (!confirm('确认删除该主播吗？')) {
-        return;
-    }
     try {
         const res = await fetch(`/admin/api/delete_anchor?user_id=${user_id}`, {
             method: 'DELETE'

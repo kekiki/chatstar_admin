@@ -25,7 +25,7 @@ async def product_list(
     apps_result = await db.execute(apps_stmt)
     apps = apps_result.scalars().all()
     page, page_size, offset = get_page_params(page, page_size)
-    q = select(models.Product).order_by(models.Product.type.asc()).order_by(models.Product.diamonds.asc())
+    q = select(models.Product).order_by(models.Product.diamonds.asc(),models.Product.type.asc(),models.Product.package_name,models.Product.currency_price)
 
     if keyword:
         q = q.where(

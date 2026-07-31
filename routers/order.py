@@ -103,7 +103,7 @@ async def export_order(
     wb = Workbook()
     ws = wb.active
     ws.title = "订单数据"
-    header = ["订单ID", "用户ID", "订单号", "创建时间", "SKU", "折扣类型", "订单状态", "货币代码", "货币价格"]
+    header = ["订单ID", "用户ID", "订单号", "创建时间", "SKU", "商品类型", "订单状态", "货币代码", "货币价格"]
     ws.append(header)
     for od in order_list:
         status_text = {0: "待支付", 1: "支付成功", 2: "支付失败"}.get(od.order_status, "未知")

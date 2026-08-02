@@ -2,9 +2,15 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import APP_TITLE, APP_HOST, APP_PORT
-from routers import auth_router, dashboard_router, user_router, anchor_router, order_router, app_list_router, app_review_router, product_router, gift_router, media_router
+from routers import auth_router, dashboard_router, user_router, anchor_router, order_router, app_list_router, app_review_router, product_router, gift_router, media_router, task_router
 
 app = FastAPI(title=APP_TITLE)
+
+@app.on_event("startup")
+async def startup():
+    from database import init_db_tables
+    await init_db_tables()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 生产替换为你的前端域名
@@ -24,6 +30,7 @@ app.include_router(app_review_router)
 app.include_router(product_router)
 app.include_router(gift_router)
 app.include_router(media_router)
+app.include_router(task_router)
 
 # 首页自动跳转看板
 @app.get("/admin")

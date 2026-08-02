@@ -46,18 +46,18 @@ AsyncSessionLocal = async_sessionmaker(
 # 所有表的父类
 Base = declarative_base()
 
-# 启动时自动创建所有不存在的表
+_tables_initialized = False
+
 async def init_db_tables():
-    # 关键：导入models包，加载所有模型到Base.metadata
+    global _tables_initialized
+    if _tables_initialized:
+        return
     import models
     async with engine.begin() as conn:
-        # 扫描所有继承Base的模型，不存在则新建表
         await conn.run_sync(Base.metadata.create_all)
+    _tables_initialized = True
 
-# FastAPI全局依赖，每个请求自动分配会话
 async def get_db():
-    # 首次请求执行一次建表，重复调用无害
     await init_db_tables()
     async with AsyncSessionLocal() as session:
         yield session
-        # 离开作用域自动归还连接到池

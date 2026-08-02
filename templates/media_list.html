@@ -195,14 +195,16 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button class="btn btn-success" id="submitEditAnchor">保存修改</button>
+                <button class="btn btn-success" id="submitEditMedia">保存修改</button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+setupModalEnter('addMediaModal', 'submitAddMedia');
+setupModalEnter('editMediaModal', 'submitEditMedia');
+
 let currentEditMediaData = null;
 
 function openeditMediaModal(data) {
@@ -214,100 +216,64 @@ function openeditMediaModal(data) {
     form.find('[name=media]').val(data.url);
     form.find('[name=cover]').val(data.cover || '');
     form.find('[name=is_vip][value=' + (data.is_vip ? 'true' : 'false') + ']').prop('checked', true);
-    
-    // 显示现有媒体预览
     if (data.is_video) {
-        $('#editMediaPreview').html(`<video src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;" controls></video>`);
-    } else if (data.cover) {
-        $('#editMediaPreview').html(`<img src="${data.cover}" style="width: 160px; height: 160px; object-fit: contain;">`);
-    } else if (data.url) {
-        $('#editMediaPreview').html(`<img src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;">`);
+        $('#editMediaPreview').html('<video src="' + data.url + '" style="width:160px;height:160px;object-fit:contain;" controls></video>');
+    } else if (data.cover || data.url) {
+        $('#editMediaPreview').html('<img src="' + (data.cover || data.url) + '" style="width:160px;height:160px;object-fit:contain;">');
     } else {
         $('#editMediaPreview').html('');
     }
-    
     modal.show();
 }
 
 $(document).on('click', '.edit-media-btn', function() {
-    const button = $(this);
+    const b = $(this);
     openeditMediaModal({
-        id: button.data('id'),
-        user_id: button.data('user_id'),
-        cover: button.data('cover'),
-        url: button.data('url'),
-        is_video: button.data('is_video') === true || button.data('is_video') === 'True' || button.data('is_video') === 'true',
-        is_vip: button.data('is_vip') === true || button.data('is_vip') === 'True' || button.data('is_vip') === 'true'
+        id: b.data('id'), user_id: b.data('user_id'), cover: b.data('cover'),
+        url: b.data('url'),
+        is_video: b.data('is_video') === true || b.data('is_video') === 'True' || b.data('is_video') === 'true',
+        is_vip: b.data('is_vip') === true || b.data('is_vip') === 'True' || b.data('is_vip') === 'true'
     });
 });
 
-$(document).on('click', '.delete-media-btn', async function() {
+$(document).on('click', '.delete-media-btn', function() {
     const id = $(this).data('id');
-    try {
-        const res = await fetch(`/admin/api/delete_media?id=${id}`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || '删除失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('删除失败，请稍后重试。');
-    }
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_media?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
 });
 
-// 媒体上传处理
 async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
     const file = fileInput.files[0];
     if (!file) return null;
-
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        alert('请选择图片或视频文件');
-        return null;
-    }
-
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { showToast('请选择图片或视频文件', 'warning'); return null; }
     const formData = new FormData();
     formData.append('file', file);
-
-    // 显示加载状态
-    $(previewId).html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">上传中...</span></div>');
+    $(previewId).html('<div class="spinner-border text-primary spinner-border-sm" role="status"></div>');
     fileInput.disabled = true;
-
     try {
-        const res = await fetch('/admin/api/upload_media', {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch('/admin/api/upload_media', {method: 'POST', body: formData});
         const data = await res.json();
         if (res.ok && data.code === 200) {
-            console.log('Upload response:', data);
-            // 显示预览
             if (file.type.startsWith('video/')) {
-                $(previewId).html(`<video src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;" controls></video>`);
+                $(previewId).html('<video src="' + data.url + '" style="width:160px;height:160px;object-fit:contain;" controls></video>');
             } else {
-                $(previewId).html(`<img src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;">`);
+                $(previewId).html('<img src="' + data.url + '" style="width:160px;height:160px;object-fit:contain;">');
             }
-            // 设置隐藏字段
             $(urlInputId).val(data.url);
-            if (coverInputId) {
-                $(coverInputId).val(data.cover || '');
-                console.log('Cover set to:', data.cover);
-            }
+            if (coverInputId) $(coverInputId).val(data.cover || '');
             fileInput.disabled = false;
             return data.url;
         } else {
-            alert(data.msg || '上传失败');
+            showToast(data.msg || '上传失败', 'error');
             $(previewId).html('');
             fileInput.disabled = false;
             return null;
         }
-    } catch (error) {
-        console.error(error);
-        alert('上传失败，请稍后重试');
+    } catch (e) {
+        console.error(e);
+        showToast('上传失败', 'error');
         $(previewId).html('');
         fileInput.disabled = false;
         return null;
@@ -316,95 +282,36 @@ async function uploadMedia(fileInput, previewId, urlInputId, coverInputId) {
 
 $('#submitAddMedia').click(async function() {
     const form = $('#addMediaForm');
-    
-    // 如果选择了文件但还没上传，先上传
     const fileInput = form.find('[name=media_file]')[0];
     if (fileInput.files.length > 0 && !form.find('[name=media]').val()) {
         const mediaUrl = await uploadMedia(fileInput, '#addMediaPreview', '#addMediaUrl', '#addMediaCover');
         if (!mediaUrl) return;
     }
-    
-    const payload = {
-        user_id: form.find('[name=user_id]').val(),
-        url: form.find('[name=media]').val(),
+    const user_id = Number(form.find('[name=user_id]').val());
+    if (!user_id) { showToast('请填写用户ID', 'warning'); return; }
+    apiRequest('/admin/api/add_media', 'POST', {
+        user_id, url: form.find('[name=media]').val(),
         cover: form.find('[name=cover]').val(),
         is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : false,
         is_vip: form.find('[name=is_vip]:checked').val() === 'true'
-    };
-
-    if (!payload.user_id) {
-        alert('请填写用户ID。');
-        return;
-    }
-
-    try {
-        const res = await fetch('/admin/api/add_media', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            // alert(data.msg);
-            const addModal = bootstrap.Modal.getInstance(document.getElementById('addMediaModal'));
-            if (addModal) {
-                addModal.hide();
-            }
-            location.reload();
-        } else {
-            alert(data.msg || '新增失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('新增失败，请稍后重试。');
-    }
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addMediaModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
 
-$('#submitEditAnchor').click(async function() {
+$('#submitEditMedia').click(async function() {
     const form = $('#editMediaForm');
-    
-    // 如果选择了文件但还没上传，先上传
     const fileInput = form.find('[name=media_file]')[0];
     if (fileInput.files.length > 0) {
         const mediaUrl = await uploadMedia(fileInput, '#editMediaPreview', '#editMediaUrl', '#editMediaCover');
         if (!mediaUrl) return;
     }
-    
-    const payload = {
-        id: Number(form.find('[name=id]').val()),
-        user_id: Number(form.find('[name=user_id]').val()),
-        url: form.find('[name=media]').val(),
-        cover: form.find('[name=cover]').val(),
+    const user_id = Number(form.find('[name=user_id]').val());
+    if (!user_id) { showToast('请填写用户ID', 'warning'); return; }
+    apiRequest('/admin/api/update_media', 'PUT', {
+        id: Number(form.find('[name=id]').val()), user_id,
+        url: form.find('[name=media]').val(), cover: form.find('[name=cover]').val(),
         is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : currentEditMediaData.is_video,
-        is_vip: form.find('[name=is_vip]:checked').val() === 'true',
-    };
-
-    if (!payload.user_id) {
-        alert('请填写用户ID。');
-        return;
-    }
-
-    try {
-        const res = await fetch('/admin/api/update_media', {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            // alert(data.msg);
-            const editModal = bootstrap.Modal.getInstance(document.getElementById('editMediaModal'));
-            if (editModal) {
-                editModal.hide();
-            }
-            location.reload();
-        } else {
-            alert(data.msg || '更新失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('更新失败，请稍后重试。');
-    }
+        is_vip: form.find('[name=is_vip]:checked').val() === 'true'
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editMediaModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
 </script>
 

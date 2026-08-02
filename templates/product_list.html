@@ -286,9 +286,10 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// 编辑商品弹窗
+setupModalEnter('addProductModal', 'submitAddProduct');
+setupModalEnter('editProductModal', 'submitEditProduct');
+
 $(".edit-product-btn").click(function(){
     const btn = $(this);
     $("#editProductId").val(btn.attr("data-id"));
@@ -307,117 +308,50 @@ $(".edit-product-btn").click(function(){
     new bootstrap.Modal("#editProductModal").show();
 })
 
-// 编辑商品提交
-$("#submitEditProduct").click(async function(){
+function getProductFormValues(form) {
+    return {
+        package_name: form.find("[name=package_name]").val(),
+        sku: form.find("[name=sku]").val(),
+        diamonds: parseInt(form.find("[name=diamonds]").val()) || 0,
+        vip_days: parseInt(form.find("[name=vip_days]").val()) || 0,
+        reward_diamonds: parseInt(form.find("[name=reward_diamonds]").val()) || 0,
+        type: parseInt(form.find("[name=type]").val()) || 0,
+        discount: parseInt(form.find("[name=discount]").val()) || 100,
+        currency_code: form.find("[name=currency_code]").val(),
+        currency_price: parseFloat(form.find("[name=currency_price]").val()) || 0,
+        call_card_num: parseInt(form.find("[name=call_card_num]").val()) || 0,
+        match_card_num: parseInt(form.find("[name=match_card_num]").val()) || 0,
+        chat_card_num: parseInt(form.find("[name=chat_card_num]").val()) || 0
+    };
+}
+
+$("#submitEditProduct").click(function(){
     const form = $("#editProductForm");
-    const id = parseInt(form.find("[name=id]").val());
-    const package_name = form.find("[name=package_name]").val();
-    const sku = form.find("[name=sku]").val();
-    const diamonds = parseInt(form.find("[name=diamonds]").val()) || 0;
-    const vip_days = parseInt(form.find("[name=vip_days]").val()) || 0;
-    const reward_diamonds = parseInt(form.find("[name=reward_diamonds]").val()) || 0;
-    const type = parseInt(form.find("[name=type]").val()) || 0;
-    const discount = parseInt(form.find("[name=discount]").val()) || 100;
-    const currency_code = form.find("[name=currency_code]").val();
-    const currency_price = parseFloat(form.find("[name=currency_price]").val()) || 0;
-    const call_card_num = parseInt(form.find("[name=call_card_num]").val()) || 0;
-    const match_card_num = parseInt(form.find("[name=match_card_num]").val()) || 0;
-    const chat_card_num = parseInt(form.find("[name=chat_card_num]").val()) || 0;
-
-    if (!package_name) {
-        alert("请选择所属应用");
-        return;
-    }
-    if (!sku) {
-        alert("请填写SKU");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/update_product", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id, package_name, sku, diamonds, vip_days, reward_diamonds, type, discount, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "更新失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("更新失败，请稍后重试");
-    }
+    const v = getProductFormValues(form);
+    v.id = parseInt(form.find("[name=id]").val());
+    if (!v.package_name) { showToast("请选择所属应用", "warning"); return; }
+    if (!v.sku) { showToast("请填写SKU", "warning"); return; }
+    apiRequest("/admin/api/update_product", "PUT", v, {
+        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editProductModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+    });
 })
 
-// 新增商品提交
-$("#submitAddProduct").click(async function(){
+$("#submitAddProduct").click(function(){
     const form = $("#addProductForm");
-    const package_name = form.find("[name=package_name]").val();
-    const sku = form.find("[name=sku]").val();
-    const diamonds = parseInt(form.find("[name=diamonds]").val()) || 0;
-    const vip_days = parseInt(form.find("[name=vip_days]").val()) || 0;
-    const reward_diamonds = parseInt(form.find("[name=reward_diamonds]").val()) || 0;
-    const type = parseInt(form.find("[name=type]").val()) || 0;
-    const discount = parseInt(form.find("[name=discount]").val()) || 100;
-    const currency_code = form.find("[name=currency_code]").val();
-    const currency_price = parseFloat(form.find("[name=currency_price]").val()) || 0;
-    const call_card_num = parseInt(form.find("[name=call_card_num]").val()) || 0;
-    const match_card_num = parseInt(form.find("[name=match_card_num]").val()) || 0;
-    const chat_card_num = parseInt(form.find("[name=chat_card_num]").val()) || 0;
-
-    if (!package_name) {
-        alert("请选择所属应用");
-        return;
-    }
-    if (!sku) {
-        alert("请填写SKU");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/add_product", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({package_name, sku, diamonds, vip_days, reward_diamonds, type, discount, currency_code, currency_price, call_card_num, match_card_num, chat_card_num})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            const addModal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
-            if (addModal) {
-                addModal.hide();
-            }
-            location.reload();
-        } else {
-            alert(data.msg || "新增失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("新增失败，请稍后重试");
-    }
+    const v = getProductFormValues(form);
+    if (!v.package_name) { showToast("请选择所属应用", "warning"); return; }
+    if (!v.sku) { showToast("请填写SKU", "warning"); return; }
+    apiRequest("/admin/api/add_product", "POST", v, {
+        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addProductModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+    });
 })
 
-// 删除商品
-$(document).on('click', '.delete-product-btn', async function() {
+$(".delete-product-btn").click(function(){
     const id = $(this).data('id');
-    try {
-        const res = await fetch(`/admin/api/delete_product?id=${id}`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || '删除失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('删除失败，请稍后重试。');
-    }
-});
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_product?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
+})
 </script>
 {% endblock %}

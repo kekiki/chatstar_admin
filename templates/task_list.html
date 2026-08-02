@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>任务配置列表</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">新增任务</button>
+</div>
+<form action="/admin/task" method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-auto">
+        <label>关键词</label>
+        <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="ID/任务名称/描述">
+    </div>
+    <div class="col-auto">
+        <label>任务分类</label>
+        <select class="form-select" name="category">
+            <option value="-1" {% if category == -1 %}selected{% endif %}>全部</option>
+            <option value="0" {% if category == 0 %}selected{% endif %}>签到任务</option>
+            <option value="1" {% if category == 1 %}selected{% endif %}>每日任务</option>
+            <option value="2" {% if category == 2 %}selected{% endif %}>新手任务</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary">查询</button>
+        <a href="/admin/task" class="btn btn-outline-secondary">重置</a>
+    </div>
+</form>
+<hr>
+<style>
+    .task-table th, .task-table td {
+        white-space: nowrap;
+        vertical-align: middle;
+        padding: 0.5rem 0.7rem;
+        font-size: 0.85rem;
+    }
+    .task-table th { font-weight: 600; }
+    .task-table .ellipsis-cell {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0 task-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>任务名称</th>
+                    <th class="ellipsis-cell">描述</th>
+                    <th>图标</th>
+                    <th>分类</th>
+                    <th>类型</th>
+                    <th>天数/次数</th>
+                    <th>钻石</th>
+                    <th>通话卡</th>
+                    <th>匹配卡</th>
+                    <th>聊天卡</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_data.list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.name or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.desc or '-' }}">{{ item.desc or '-' }}</td>
+                    <td>
+                        {% if item.icon %}
+                        <img src="{{ item.icon }}" style="width:32px;height:32px;object-fit:contain;">
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>
+                        {% if item.category == 0 %}
+                        <span class="badge bg-info">签到</span>
+                        {% elif item.category == 1 %}
+                        <span class="badge bg-success">每日</span>
+                        {% elif item.category == 2 %}
+                        <span class="badge bg-warning">新手</span>
+                        {% else %}
+                        <span class="badge bg-secondary">未知</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.type %}
+                        <span class="badge bg-primary">{{ item.type }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.num or 0 }}</td>
+                    <td>{{ item.diamonds or 0 }}</td>
+                    <td>{{ item.call_card_num or 0 }}</td>
+                    <td>{{ item.match_card_num or 0 }}</td>
+                    <td>{{ item.chat_card_num or 0 }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-task-btn"
+                                data-id="{{ item.id }}"
+                                data-name="{{ item.name or '' }}"
+                                data-desc="{{ item.desc or '' }}"
+                                data-icon="{{ item.icon or '' }}"
+                                data-num="{{ item.num or 0 }}"
+                                data-category="{{ item.category or 0 }}"
+                                data-type="{{ item.type or 0 }}"
+                                data-diamonds="{{ item.diamonds or 0 }}"
+                                data-call-card-num="{{ item.call_card_num or 0 }}"
+                                data-match-card-num="{{ item.match_card_num or 0 }}"
+                                data-chat-card-num="{{ item.chat_card_num or 0 }}">编辑</button>
+                        <button class="btn btn-sm btn-danger delete-task-btn ms-1" data-id="{{ item.id }}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span>共 {{ page_data.total }} 条，第 {{ page_data.page }} / {{ page_data.total_pages }} 页</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/task?keyword={{ keyword }}&category={{ category }}&page={{ page_data.page-1 }}">上一页</a>
+                </li>
+                <li class="page-item {% if page_data.page == page_data.total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="/admin/task?keyword={{ keyword }}&category={{ category }}&page={{ page_data.page+1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- 新增任务弹窗 -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增任务</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTaskForm">
+                    <div class="mb-3">
+                        <label>任务名称 *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>任务描述</label>
+                        <input type="text" name="desc" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>任务图标</label>
+                        <input type="file" name="icon_file" id="addTaskIconFile" class="form-control" accept="image/*">
+                        <input type="hidden" name="icon" id="addTaskIcon">
+                        <div id="addTaskIconPreview" class="mt-2"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label>任务分类</label>
+                        <select name="category" class="form-select">
+                            <option value="0">签到任务</option>
+                            <option value="1">每日任务</option>
+                            <option value="2">新手任务</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>任务类型</label>
+                        <input type="text" name="type" class="form-control" placeholder="请输入任务类型">
+                    </div>
+                    <div class="mb-3">
+                        <label>天数/次数</label>
+                        <input type="number" name="num" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>钻石奖励</label>
+                        <input type="number" name="diamonds" class="form-control" value="0">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label>通话卡</label>
+                            <input type="number" name="call_card_num" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label>匹配卡</label>
+                            <input type="number" name="match_card_num" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label>聊天卡</label>
+                            <input type="number" name="chat_card_num" class="form-control" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddTask">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑任务弹窗 -->
+<div class="modal fade" id="editTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑任务</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <input type="hidden" name="id" id="editTaskId">
+                    <div class="mb-3">
+                        <label>任务名称 *</label>
+                        <input type="text" name="name" id="editTaskName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>任务描述</label>
+                        <input type="text" name="desc" id="editTaskDesc" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>任务图标</label>
+                        <input type="file" name="icon_file" id="editTaskIconFile" class="form-control" accept="image/*">
+                        <input type="hidden" name="icon" id="editTaskIcon">
+                        <div id="editTaskIconPreview" class="mt-2"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label>任务分类</label>
+                        <select name="category" id="editTaskCategory" class="form-select">
+                            <option value="0">签到任务</option>
+                            <option value="1">每日任务</option>
+                            <option value="2">新手任务</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>任务类型</label>
+                        <input type="text" name="type" id="editTaskType" class="form-control" placeholder="请输入任务类型">
+                    </div>
+                    <div class="mb-3">
+                        <label>天数/次数</label>
+                        <input type="number" name="num" id="editTaskNum" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>钻石奖励</label>
+                        <input type="number" name="diamonds" id="editTaskDiamonds" class="form-control" value="0">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label>通话卡</label>
+                            <input type="number" name="call_card_num" id="editTaskCallCardNum" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label>匹配卡</label>
+                            <input type="number" name="match_card_num" id="editTaskMatchCardNum" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label>聊天卡</label>
+                            <input type="number" name="chat_card_num" id="editTaskChatCardNum" class="form-control" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditTask">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+setupModalEnter('addTaskModal', 'submitAddTask');
+setupModalEnter('editTaskModal', 'submitEditTask');
+
+async function uploadFile(url, fileInput, previewId, urlInputId) {
+    const file = fileInput.files[0];
+    if (!file) return null;
+    const formData = new FormData();
+    formData.append('file', file);
+    $(previewId).html('<div class="spinner-border text-primary spinner-border-sm" role="status"></div>');
+    fileInput.disabled = true;
+    try {
+        const res = await fetch(url, {method: 'POST', body: formData});
+        const data = await res.json();
+        if (res.ok && data.code === 200) {
+            $(previewId).html('<img src="' + data.url + '" style="width:80px;height:80px;object-fit:contain;">');
+            $(urlInputId).val(data.url);
+            fileInput.disabled = false;
+            return data.url;
+        } else {
+            showToast(data.msg || '上传失败', 'error');
+            $(previewId).html('');
+            fileInput.disabled = false;
+            return null;
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('上传失败', 'error');
+        $(previewId).html('');
+        fileInput.disabled = false;
+        return null;
+    }
+}
+
+$("#addTaskIconFile").change(function(){ uploadFile('/admin/api/upload_task_icon', this, "#addTaskIconPreview", "#addTaskIcon"); });
+$("#editTaskIconFile").change(function(){ uploadFile('/admin/api/upload_task_icon', this, "#editTaskIconPreview", "#editTaskIcon"); });
+
+function getTaskFormValues(form) {
+    return {
+        name: form.find('[name=name]').val(),
+        desc: form.find('[name=desc]').val(),
+        icon: form.find('[name=icon]').val(),
+        num: parseInt(form.find('[name=num]').val()) || 0,
+        category: parseInt(form.find('[name=category]').val()) || 0,
+        type: form.find('[name=type]').val(),
+        diamonds: parseInt(form.find('[name=diamonds]').val()) || 0,
+        call_card_num: parseInt(form.find('[name=call_card_num]').val()) || 0,
+        match_card_num: parseInt(form.find('[name=match_card_num]').val()) || 0,
+        chat_card_num: parseInt(form.find('[name=chat_card_num]').val()) || 0
+    };
+}
+
+$(".edit-task-btn").click(function(){
+    const btn = $(this);
+    $("#editTaskId").val(btn.attr("data-id"));
+    $("#editTaskName").val(btn.attr("data-name"));
+    $("#editTaskDesc").val(btn.attr("data-desc"));
+    $("#editTaskIcon").val(btn.attr("data-icon"));
+    $("#editTaskNum").val(btn.attr("data-num"));
+    $("#editTaskCategory").val(btn.attr("data-category"));
+    $("#editTaskType").val(btn.attr("data-type"));
+    $("#editTaskDiamonds").val(btn.attr("data-diamonds"));
+    $("#editTaskCallCardNum").val(btn.attr("data-call-card-num"));
+    $("#editTaskMatchCardNum").val(btn.attr("data-match-card-num"));
+    $("#editTaskChatCardNum").val(btn.attr("data-chat-card-num"));
+    if (btn.attr("data-icon")) {
+        $("#editTaskIconPreview").html('<img src="' + btn.attr("data-icon") + '" style="width:80px;height:80px;object-fit:contain;">');
+    } else {
+        $("#editTaskIconPreview").html('');
+    }
+    new bootstrap.Modal("#editTaskModal").show();
+})
+
+$("#submitAddTask").click(function(){
+    const form = $("#addTaskForm");
+    const v = getTaskFormValues(form);
+    if (!v.name) { showToast("请填写任务名称", "warning"); return; }
+    apiRequest("/admin/api/add_task", "POST", v, {
+        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addTaskModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+    });
+})
+
+$("#submitEditTask").click(function(){
+    const form = $("#editTaskForm");
+    const v = getTaskFormValues(form);
+    v.id = parseInt(form.find("[name=id]").val());
+    if (!v.name) { showToast("请填写任务名称", "warning"); return; }
+    apiRequest("/admin/api/update_task", "PUT", v, {
+        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editTaskModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+    });
+})
+
+$(".delete-task-btn").click(function(){
+    const id = $(this).data('id');
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_task?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
+})
+</script>
+{% endblock %}

@@ -246,8 +246,10 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+setupModalEnter('addAnchorModal', 'submitAddAnchor');
+setupModalEnter('editAnchorModal', 'submitEditAnchor');
+
 function openEditAnchorModal(data) {
     const modal = new bootstrap.Modal(document.getElementById('editAnchorModal'));
     const form = $('#editAnchorForm');
@@ -262,92 +264,59 @@ function openEditAnchorModal(data) {
     form.find('[name=fans_count]').val(data.fans_count);
     form.find('[name=like_count]').val(data.like_count);
     form.find('[name=is_review][value=' + (data.is_review ? 'true' : 'false') + ']').prop('checked', true);
-    
-    // 显示现有头像预览
     if (data.avatar) {
-        $('#editAvatarPreview').html(`<img src="${data.avatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`);
+        $('#editAvatarPreview').html('<img src="' + data.avatar + '" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">');
     } else {
         $('#editAvatarPreview').html('');
     }
-    
     modal.show();
 }
 
 $(document).on('click', '.edit-anchor-btn', function() {
-    const button = $(this);
+    const b = $(this);
     openEditAnchorModal({
-        user_id: button.data('user_id'),
-        nickname: button.data('nickname'),
-        age: button.data('age'),
-        avatar: button.data('avatar'),
-        country: button.data('country'),
-        language_name: button.data('language_name'),
-        language_code: button.data('language_code'),
-        follow_count: button.data('follow_count'),
-        fans_count: button.data('fans_count'),
-        like_count: button.data('like_count'),
-        is_review: button.data('is_review') === true || button.data('is_review') === 'True' || button.data('is_review') === 'true'
+        user_id: b.data('user_id'), nickname: b.data('nickname'), age: b.data('age'),
+        avatar: b.data('avatar'), country: b.data('country'),
+        language_name: b.data('language_name'), language_code: b.data('language_code'),
+        follow_count: b.data('follow_count'), fans_count: b.data('fans_count'),
+        like_count: b.data('like_count'),
+        is_review: b.data('is_review') === true || b.data('is_review') === 'True' || b.data('is_review') === 'true'
     });
 });
 
-$(document).on('click', '.delete-anchor-btn', async function() {
+$(document).on('click', '.delete-anchor-btn', function() {
     const user_id = $(this).data('user_id');
-    try {
-        const res = await fetch(`/admin/api/delete_anchor?user_id=${user_id}`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || '删除失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('删除失败，请稍后重试。');
-    }
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_anchor?user_id=" + user_id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
 });
 
-// 头像上传处理
 async function uploadAvatar(fileInput, previewId, urlInputId) {
     const file = fileInput.files[0];
     if (!file) return null;
-
-    if (!file.type.startsWith('image/')) {
-        alert('请选择图片文件');
-        return null;
-    }
-
+    if (!file.type.startsWith('image/')) { showToast('请选择图片文件', 'warning'); return null; }
     const formData = new FormData();
     formData.append('file', file);
-
-    // 显示加载状态
-    $(previewId).html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">上传中...</span></div>');
+    $(previewId).html('<div class="spinner-border text-primary spinner-border-sm" role="status"></div>');
     fileInput.disabled = true;
-
     try {
-        const res = await fetch('/admin/api/upload_avatar', {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch('/admin/api/upload_avatar', {method: 'POST', body: formData});
         const data = await res.json();
         if (res.ok && data.code === 200) {
-            // 显示预览
-            $(previewId).html(`<img src="${data.avatar_url}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`);
-            // 设置隐藏字段
+            $(previewId).html('<img src="' + data.avatar_url + '" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">');
             $(urlInputId).val(data.avatar_url);
             fileInput.disabled = false;
             return data.avatar_url;
         } else {
-            alert(data.msg || '上传失败');
+            showToast(data.msg || '上传失败', 'error');
             $(previewId).html('');
             fileInput.disabled = false;
             return null;
         }
-    } catch (error) {
-        console.error(error);
-        alert('上传失败，请稍后重试');
+    } catch (e) {
+        console.error(e);
+        showToast('上传失败', 'error');
         $(previewId).html('');
         fileInput.disabled = false;
         return null;
@@ -356,17 +325,15 @@ async function uploadAvatar(fileInput, previewId, urlInputId) {
 
 $('#submitAddAnchor').click(async function() {
     const form = $('#addAnchorForm');
-    
-    // 如果选择了文件但还没上传，先上传
     const fileInput = form.find('[name=avatar_file]')[0];
     if (fileInput.files.length > 0 && !form.find('[name=avatar]').val()) {
         const avatarUrl = await uploadAvatar(fileInput, '#addAvatarPreview', '#addAvatarUrl');
         if (!avatarUrl) return;
     }
-    
-    const payload = {
-        nickname: form.find('[name=nickname]').val(),
-        age: form.find('[name=age]').val(),
+    const nickname = form.find('[name=nickname]').val();
+    if (!nickname) { showToast('请填写主播昵称', 'warning'); return; }
+    apiRequest('/admin/api/add_anchor', 'POST', {
+        nickname, age: Number(form.find('[name=age]').val()) || 0,
         avatar: form.find('[name=avatar]').val(),
         country: form.find('[name=country]').val(),
         language_name: form.find('[name=language_name]').val(),
@@ -375,50 +342,21 @@ $('#submitAddAnchor').click(async function() {
         fans_count: Number(form.find('[name=fans_count]').val() || 0),
         like_count: Number(form.find('[name=like_count]').val() || 0),
         is_review: form.find('[name=is_review]:checked').val() === 'true'
-    };
-
-    if (!payload.nickname) {
-        alert('请填写主播昵称。');
-        return;
-    }
-
-    try {
-        const res = await fetch('/admin/api/add_anchor', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            // alert(data.msg);
-            const addModal = bootstrap.Modal.getInstance(document.getElementById('addAnchorModal'));
-            if (addModal) {
-                addModal.hide();
-            }
-            location.reload();
-        } else {
-            alert(data.msg || '新增失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('新增失败，请稍后重试。');
-    }
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addAnchorModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
 
 $('#submitEditAnchor').click(async function() {
     const form = $('#editAnchorForm');
-    
-    // 如果选择了新头像文件，先上传
     const fileInput = form.find('[name=avatar_file]')[0];
     if (fileInput.files.length > 0) {
         const avatarUrl = await uploadAvatar(fileInput, '#editAvatarPreview', '#editAvatarUrl');
         if (!avatarUrl) return;
     }
-    
-    const payload = {
+    const nickname = form.find('[name=nickname]').val();
+    if (!nickname) { showToast('请填写主播昵称', 'warning'); return; }
+    apiRequest('/admin/api/update_anchor', 'PUT', {
         user_id: Number(form.find('[name=user_id]').val()),
-        nickname: form.find('[name=nickname]').val(),
-        age: form.find('[name=age]').val(),
+        nickname, age: Number(form.find('[name=age]').val()) || 0,
         avatar: form.find('[name=avatar]').val(),
         country: form.find('[name=country]').val(),
         language_name: form.find('[name=language_name]').val(),
@@ -427,34 +365,7 @@ $('#submitEditAnchor').click(async function() {
         fans_count: Number(form.find('[name=fans_count]').val() || 0),
         like_count: Number(form.find('[name=like_count]').val() || 0),
         is_review: form.find('[name=is_review]:checked').val() === 'true'
-    };
-
-    if (!payload.nickname) {
-        alert('请填写主播昵称。');
-        return;
-    }
-
-    try {
-        const res = await fetch('/admin/api/update_anchor', {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            // alert(data.msg);
-            const editModal = bootstrap.Modal.getInstance(document.getElementById('editAnchorModal'));
-            if (editModal) {
-                editModal.hide();
-            }
-            location.reload();
-        } else {
-            alert(data.msg || '更新失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('更新失败，请稍后重试。');
-    }
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editAnchorModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
 </script>
 

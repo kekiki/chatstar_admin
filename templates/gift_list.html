@@ -183,9 +183,10 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// 编辑礼物弹窗
+setupModalEnter('addGiftModal', 'submitAddGift');
+setupModalEnter('editGiftModal', 'submitEditGift');
+
 $(".edit-gift-btn").click(function(){
     const btn = $(this);
     $("#editGiftId").val(btn.attr("data-id"));
@@ -193,220 +194,87 @@ $(".edit-gift-btn").click(function(){
     $("#editGiftIcon").val(btn.attr("data-gift-icon"));
     $("#editGiftPrice").val(btn.attr("data-gift-price"));
     $("#editGiftAnimation").val(btn.attr("data-gift-animation"));
-    
-    // 显示现有图标预览
     if (btn.attr("data-gift-icon")) {
-        $("#editGiftIconPreview").html(`<img src="${btn.attr("data-gift-icon")}" style="width: 80px; height: 80px; object-fit: contain;">`);
+        $("#editGiftIconPreview").html('<img src="' + btn.attr("data-gift-icon") + '" style="width:80px;height:80px;object-fit:contain;">');
     } else {
         $("#editGiftIconPreview").html('');
     }
-    
-    // 显示现有动画预览
     if (btn.attr("data-gift-animation")) {
-        $("#editGiftAnimationPreview").html(`<a href="${btn.attr("data-gift-animation")}" target="_blank">查看现有动画</a>`);
+        $("#editGiftAnimationPreview").html('<a href="' + btn.attr("data-gift-animation") + '" target="_blank">查看现有动画</a>');
     } else {
         $("#editGiftAnimationPreview").html('');
     }
-    
     new bootstrap.Modal("#editGiftModal").show();
 })
 
-// 礼物图标上传处理
-async function uploadGiftIcon(fileInput, previewId, urlInputId) {
+async function uploadFile(url, fileInput, previewId, urlInputId) {
     const file = fileInput.files[0];
     if (!file) return null;
-
-    if (!file.type.startsWith('image/')) {
-        alert('请选择图片文件');
-        return null;
-    }
-
     const formData = new FormData();
     formData.append('file', file);
-
-    // 显示加载状态
-    $(previewId).html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">上传中...</span></div>');
+    $(previewId).html('<div class="spinner-border text-primary spinner-border-sm" role="status"></div>');
     fileInput.disabled = true;
-
     try {
-        const res = await fetch('/admin/api/upload_gift_icon', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            $(previewId).html(`<img src="${data.url}" style="width: 80px; height: 80px; object-fit: contain;">`);
-            $(urlInputId).val(data.url);
-            fileInput.disabled = false;
-            return data.url;
-        } else {
-            alert(data.msg || '上传失败');
-            $(previewId).html('');
-            fileInput.disabled = false;
-            return null;
-        }
-    } catch (error) {
-        console.error(error);
-        alert('上传失败，请稍后重试');
-        $(previewId).html('');
-        fileInput.disabled = false;
-        return null;
-    }
-}
-
-// 礼物动画上传处理
-async function uploadGiftAnimation(fileInput, previewId, urlInputId) {
-    const file = fileInput.files[0];
-    if (!file) return null;
-
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        alert('请选择图片或视频文件');
-        return null;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    // 显示加载状态
-    $(previewId).html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">上传中...</span></div>');
-    fileInput.disabled = true;
-
-    try {
-        const res = await fetch('/admin/api/upload_gift_animation', {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch(url, {method: 'POST', body: formData});
         const data = await res.json();
         if (res.ok && data.code === 200) {
             if (file.type.startsWith('video/')) {
-                $(previewId).html(`<video src="${data.url}" style="width: 160px; height: 160px; object-fit: contain;" controls></video>`);
+                $(previewId).html('<video src="' + data.url + '" style="width:160px;height:160px;object-fit:contain;" controls></video>');
             } else {
-                $(previewId).html(`<img src="${data.url}" style="width: 80px; height: 80px; object-fit: contain;">`);
+                $(previewId).html('<img src="' + data.url + '" style="width:80px;height:80px;object-fit:contain;">');
             }
             $(urlInputId).val(data.url);
             fileInput.disabled = false;
             return data.url;
         } else {
-            alert(data.msg || '上传失败');
+            showToast(data.msg || '上传失败', 'error');
             $(previewId).html('');
             fileInput.disabled = false;
             return null;
         }
-    } catch (error) {
-        console.error(error);
-        alert('上传失败，请稍后重试');
+    } catch (e) {
+        console.error(e);
+        showToast('上传失败', 'error');
         $(previewId).html('');
         fileInput.disabled = false;
         return null;
     }
 }
 
-// 绑定文件上传事件
-$("#addGiftIconFile").change(function() {
-    uploadGiftIcon(this, "#addGiftIconPreview", "#addGiftIcon");
-});
+$("#addGiftIconFile").change(function(){ uploadFile('/admin/api/upload_gift_icon', this, "#addGiftIconPreview", "#addGiftIcon"); });
+$("#addGiftAnimationFile").change(function(){ uploadFile('/admin/api/upload_gift_animation', this, "#addGiftAnimationPreview", "#addGiftAnimation"); });
+$("#editGiftIconFile").change(function(){ uploadFile('/admin/api/upload_gift_icon', this, "#editGiftIconPreview", "#editGiftIcon"); });
+$("#editGiftAnimationFile").change(function(){ uploadFile('/admin/api/upload_gift_animation', this, "#editGiftAnimationPreview", "#editGiftAnimation"); });
 
-$("#addGiftAnimationFile").change(function() {
-    uploadGiftAnimation(this, "#addGiftAnimationPreview", "#addGiftAnimation");
-});
-
-$("#editGiftIconFile").change(function() {
-    uploadGiftIcon(this, "#editGiftIconPreview", "#editGiftIcon");
-});
-
-$("#editGiftAnimationFile").change(function() {
-    uploadGiftAnimation(this, "#editGiftAnimationPreview", "#editGiftAnimation");
-});
-
-// 编辑礼物提交
-$("#submitEditGift").click(async function(){
+$("#submitEditGift").click(function(){
     const form = $("#editGiftForm");
-    const id = parseInt(form.find("[name=id]").val());
     const gift_name = form.find("[name=gift_name]").val();
-    const gift_icon = form.find("[name=gift_icon]").val();
-    const gift_price = parseInt(form.find("[name=gift_price]").val()) || 0;
-    const gift_animation = form.find("[name=gift_animation]").val();
-
-    if (!gift_name) {
-        alert("请填写礼物名称");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/update_gift", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id, gift_name, gift_icon, gift_price, gift_animation})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "更新失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("更新失败，请稍后重试");
-    }
+    if (!gift_name) { showToast("请填写礼物名称", "warning"); return; }
+    apiRequest("/admin/api/update_gift", "PUT", {
+        id: parseInt(form.find("[name=id]").val()),
+        gift_name, gift_icon: form.find("[name=gift_icon]").val(),
+        gift_price: parseInt(form.find("[name=gift_price]").val()) || 0,
+        gift_animation: form.find("[name=gift_animation]").val()
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editGiftModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 })
 
-// 新增礼物提交
-$("#submitAddGift").click(async function(){
+$("#submitAddGift").click(function(){
     const form = $("#addGiftForm");
     const gift_name = form.find("[name=gift_name]").val();
-    const gift_icon = form.find("[name=gift_icon]").val();
-    const gift_price = parseInt(form.find("[name=gift_price]").val()) || 0;
-    const gift_animation = form.find("[name=gift_animation]").val();
-
-    if (!gift_name) {
-        alert("请填写礼物名称");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/add_gift", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({gift_name, gift_icon, gift_price, gift_animation})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            const addModal = bootstrap.Modal.getInstance(document.getElementById('addGiftModal'));
-            if (addModal) {
-                addModal.hide();
-            }
-            location.reload();
-        } else {
-            alert(data.msg || "新增失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("新增失败，请稍后重试");
-    }
+    if (!gift_name) { showToast("请填写礼物名称", "warning"); return; }
+    apiRequest("/admin/api/add_gift", "POST", {
+        gift_name, gift_icon: form.find("[name=gift_icon]").val(),
+        gift_price: parseInt(form.find("[name=gift_price]").val()) || 0,
+        gift_animation: form.find("[name=gift_animation]").val()
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addGiftModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 })
 
-// 删除礼物
-$(".delete-gift-btn").click(async function(){
-    const btn = $(this);
-    const id = btn.attr("data-id");
-    
-    try {
-        const res = await fetch(`/admin/api/delete_gift?id=${id}`, {
-            method: "DELETE"
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "删除失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("删除失败，请稍后重试");
-    }
+$(".delete-gift-btn").click(function(){
+    const id = $(this).attr("data-id");
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_gift?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
 })
 </script>
 {% endblock %}

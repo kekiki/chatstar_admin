@@ -137,9 +137,10 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// 查看弹窗
+setupModalEnter('addAppModal', 'submitAddApp');
+setupModalEnter('editAppModal', 'submitEditApp');
+
 $(".view-config").click(function(){
     let cfg = $(this).data("config");
     $("#configText").text(JSON.stringify(JSON.parse(cfg), null, 2));
@@ -156,99 +157,44 @@ function openEditModal(app) {
     modal.show();
 }
 
-// 编辑按钮
 $(document).on('click', '.btn-edit', function(){
-    const button = $(this);
     openEditModal({
-        id: button.data('id'),
-        app_name: button.data('name'),
-        package_name: button.data('package_name'),
-        is_online: button.data('online')
+        id: $(this).data('id'),
+        app_name: $(this).data('name'),
+        package_name: $(this).data('package_name'),
+        is_online: $(this).data('online')
     });
 });
 
-// 删除应用
-$(document).on('click', '.btn-delete', async function(){
+$(document).on('click', '.btn-delete', function(){
     const id = $(this).data('id');
-
-    try {
-        const res = await fetch(`/admin/api/delete_app_list?id=${id}`, {
-            method: 'DELETE'
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || '删除失败，请重试。');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('删除失败，请稍后重试。');
-    }
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_app_list?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
 });
 
-// 新增应用提交
-$("#submitAddApp").click(async function(){
+$("#submitAddApp").click(function(){
     const form = $("#addAppForm");
     const app_name = form.find("[name=app_name]").val();
     const package_name = form.find("[name=package_name]").val();
-    const is_online = form.find("[name=is_online]:checked").val() === "true";
-
-    if (!app_name || !package_name) {
-        alert("请填写应用名称和包名。");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/add_app_list", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({app_name, package_name, is_online})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "保存失败，请检查输入。");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("保存失败，请稍后重试。");
-    }
+    if (!app_name || !package_name) { showToast("请填写应用名称和包名", "warning"); return; }
+    apiRequest("/admin/api/add_app_list", "POST", {
+        app_name, package_name,
+        is_online: form.find("[name=is_online]:checked").val() === "true"
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addAppModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
 
-// 编辑应用提交
-$("#submitEditApp").click(async function(){
+$("#submitEditApp").click(function(){
     const form = $("#editAppForm");
     const id = form.find("[name=id]").val();
     const app_name = form.find("[name=app_name]").val();
     const package_name = form.find("[name=package_name]").val();
-    const is_online = form.find("[name=is_online]:checked").val() === "true";
-
-    if (!id || !app_name || !package_name) {
-        alert("请填写完整的应用信息。");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/update_app_list", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id: Number(id), app_name, package_name, is_online})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "更新失败，请检查输入。");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("更新失败，请稍后重试。");
-    }
+    if (!id || !app_name || !package_name) { showToast("请填写完整的应用信息", "warning"); return; }
+    apiRequest("/admin/api/update_app_list", "PUT", {
+        id: Number(id), app_name, package_name,
+        is_online: form.find("[name=is_online]:checked").val() === "true"
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editAppModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
 </script>
 {% endblock %}

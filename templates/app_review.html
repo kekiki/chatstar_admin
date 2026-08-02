@@ -164,40 +164,20 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+setupModalEnter('addReviewModal', 'submitAddReview');
+setupModalEnter('editReviewModal', 'submitEditReview');
 
-// 新增审核配置提交
-$("#submitAddReview").click(async function(){
+$("#submitAddReview").click(function(){
     const form = $("#addReviewForm");
     const package_name = form.find("[name=package_name]").val();
     const app_version = form.find("[name=app_version]").val();
-
-    if (!package_name || !app_version) {
-        alert("请填写完整信息");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/add_app_review", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({package_name, app_version})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "保存失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("保存失败，请稍后重试");
-    }
+    if (!package_name || !app_version) { showToast("请填写完整信息", "warning"); return; }
+    apiRequest("/admin/api/add_app_review", "POST", {package_name, app_version}, {
+        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addReviewModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+    });
 })
 
-// 编辑审核配置弹窗
 $(".edit-review-btn").click(function(){
     const btn = $(this);
     $("#editReviewId").val(btn.data("id"));
@@ -206,55 +186,23 @@ $(".edit-review-btn").click(function(){
     new bootstrap.Modal("#editReviewModal").show();
 })
 
-// 编辑审核配置提交
-$("#submitEditReview").click(async function(){
+$("#submitEditReview").click(function(){
     const form = $("#editReviewForm");
     const id = parseInt(form.find("[name=id]").val());
     const package_name = form.find("[name=package_name]").val();
     const app_version = form.find("[name=app_version]").val();
-
-    if (!id || !package_name || !app_version) {
-        alert("请填写完整信息");
-        return;
-    }
-
-    try {
-        const res = await fetch("/admin/api/update_app_review", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id, package_name, app_version})
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "更新失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("更新失败，请稍后重试");
-    }
+    if (!id || !package_name || !app_version) { showToast("请填写完整信息", "warning"); return; }
+    apiRequest("/admin/api/update_app_review", "PUT", {id, package_name, app_version}, {
+        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editReviewModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+    });
 })
 
-// 删除审核配置
-$(".delete-review-btn").click(async function(){
+$(".delete-review-btn").click(function(){
     const id = $(this).data("id");
-    try {
-        const res = await fetch(`/admin/api/delete_app_review?id=${id}`, {
-            method: "DELETE"
-        });
-        const data = await res.json();
-        if (res.ok && data.code === 200) {
-            alert(data.msg);
-            location.reload();
-        } else {
-            alert(data.msg || "删除失败");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("删除失败，请稍后重试");
-    }
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_app_review?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
 })
 </script>
 {% endblock %}

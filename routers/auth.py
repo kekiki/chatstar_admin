@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -9,14 +9,17 @@ from database import get_db
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-# 全局鉴权依赖，未登录跳转登录页
 def require_login(request: Request, db: AsyncSession = Depends(get_db)):
     from typing import Optional
     token: Optional[str] = request.cookies.get("admin_token")
     if not token:
+        if request.url.path.startswith("/admin/api/"):
+            raise HTTPException(status_code=401, detail="未登录或登录已过期")
         raise HTTPException(status_code=302, headers={"location": "/login"})
     username = auth.get_current_admin(token)
     if not username:
+        if request.url.path.startswith("/admin/api/"):
+            raise HTTPException(status_code=401, detail="未登录或登录已过期")
         raise HTTPException(status_code=302, headers={"location": "/login"})
     return username
 

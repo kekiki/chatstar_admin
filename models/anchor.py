@@ -17,3 +17,5 @@ class Anchor(Base):
     fans_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     is_review = Column(Boolean, default=False)
+    tags = Column(String)
+    info = Column(String)

@@ -1,7 +1,7 @@
 """
 Product database model.
 """
-from sqlalchemy import Column, Integer, String, Double
+from sqlalchemy import Column, Integer, String, Float
 from database import Base
 
 
@@ -18,7 +18,7 @@ class Product(Base):
     type = Column(Integer, default=0) # 0钻石 1首充 2VIP
     discount = Column(Integer, default=100) # 折扣, 如75代表七五折
     currency_code = Column(String, default="USD")
-    currency_price = Column(Double, default=0)
+    currency_price = Column(Float, default=0)
     call_card_num = Column(Integer, default=0)
     match_card_num = Column(Integer, default=0)
     chat_card_num = Column(Integer, default=0)

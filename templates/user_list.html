@@ -72,7 +72,11 @@
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
-                    <td>{{ item.user_id }}</td>
+                    <td>{{ item.user_id }}
+                        {% if item.is_anchor %}
+                        <span class="badge bg-info">主播</span>
+                        {% endif %}
+                    </td>
                     <td class="ellipsis-cell" title="{% for app in apps %}{% if app.package_name == item.package_name %}{{ app.app_name }}{% endif %}{% endfor %}">
                         {% for app in apps %}
                         {% if app.package_name == item.package_name %}

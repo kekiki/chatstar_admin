@@ -23,10 +23,15 @@ class AppUser(Base):
     agent = Column(String(255), default="")
     birthday = Column(Integer, default=lambda: int(datetime.datetime.now().timestamp() - 86400 * 365 * 25))
 
-    # Review flag
-    is_review = Column(Boolean, default=False)
+    is_anchor = Column(Boolean, default=False, index=True)
+    age = Column(Integer, default=20)
+    follow_count = Column(Integer, default=0)
+    fans_count = Column(Integer, default=0)
+    like_count = Column(Integer, default=0)
+    call_price = Column(Integer, default=3600)
+    tags = Column(String)
+    info = Column(String)
 
-    # Install referrer tracking
     install_referrer = Column(String(255))
     referrer_click_timestamp_seconds = Column(Integer)
     install_begin_timestamp_seconds = Column(Integer)
@@ -35,5 +40,5 @@ class AppUser(Base):
     install_version = Column(String(64))
     google_play_instant = Column(Boolean, default=False)
     password = Column(String(255))
-    total = Column(Integer, default=0) # 累计充值钻石数量
+    total = Column(Integer, default=0)
     firebase_token = Column(String(255))

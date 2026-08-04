@@ -61,7 +61,7 @@
                     </td>
                     <td>
                         {% if item.created_time %}
-                        {{ item.created_time.strftime("%Y-%m-%d %H:%M:%S") }}
+                        {{ item.created_time | int | datetime_format }}
                         {% else %}
                         -
                         {% endif %}

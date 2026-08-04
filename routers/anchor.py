@@ -7,11 +7,23 @@ from database import get_db
 from tools import get_page_params, paginate_query
 import models
 import random
+import datetime
 from r2_client import R2Client
 from image_utils import compress_image
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+def datetime_format(timestamp):
+    if not timestamp:
+        return ""
+    try:
+        dt = datetime.datetime.fromtimestamp(int(timestamp))
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return str(timestamp)
+
+templates.env.filters["datetime_format"] = datetime_format
 
 @router.get("/admin/anchor", response_class=HTMLResponse)
 async def anchor_list(
@@ -25,16 +37,16 @@ async def anchor_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = select(models.Anchor).order_by(models.Anchor.created_time.desc())
+    q = select(models.AppUser).where(models.AppUser.is_anchor == True).order_by(models.AppUser.created_time.desc())
 
     if keyword:
         q = q.where(
             or_(
-                cast(models.Anchor.user_id, String).like(f"%{keyword}%"),
-                models.Anchor.nickname.like(f"%{keyword}%"),
-                models.Anchor.country.like(f"%{keyword}%"),
-                models.Anchor.language_name.like(f"%{keyword}%"),
-                models.Anchor.language_code.like(f"%{keyword}%")
+                cast(models.AppUser.user_id, String).like(f"%{keyword}%"),
+                models.AppUser.nickname.like(f"%{keyword}%"),
+                models.AppUser.country.like(f"%{keyword}%"),
+                models.AppUser.language_name.like(f"%{keyword}%"),
+                models.AppUser.language_code.like(f"%{keyword}%")
             )
         )
 
@@ -56,12 +68,10 @@ async def upload_avatar(
     from routers.auth import require_login
     _user = require_login(request, db)
     
-    # 检查文件类型
     if not file.content_type or not file.content_type.startswith('image/'):
         return {"code": 400, "msg": "只支持图片文件"}
     
     try:
-        # 读取文件内容
         file_bytes = await file.read()
         file_content_type = file.content_type
 
@@ -109,7 +119,7 @@ async def add_anchor(
     from routers.auth import require_login
     _user = require_login(request, db)
     user_id = random.randint(1000000, 9999999) + 10000000
-    new_anchor = models.Anchor(
+    new_anchor = models.AppUser(
         user_id=user_id,
         nickname=nickname,
         age=age,
@@ -120,7 +130,8 @@ async def add_anchor(
         follow_count=follow_count,
         fans_count=fans_count,
         like_count=like_count,
-        is_review=is_review
+        is_review=is_review,
+        is_anchor=True
     )
     db.add(new_anchor)
     await db.commit()
@@ -162,7 +173,7 @@ async def update_anchor(
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    stmt = select(models.Anchor).where(models.Anchor.user_id == user_id)
+    stmt = select(models.AppUser).where(models.AppUser.user_id == user_id, models.AppUser.is_anchor == True)
     result = await db.execute(stmt)
     anchor = result.scalar_one_or_none()
     if not anchor:
@@ -218,7 +229,7 @@ async def delete_anchor(
 ):
     from routers.auth import require_login
     _user = require_login(request, db)
-    stmt = select(models.Anchor).where(models.Anchor.user_id == user_id)
+    stmt = select(models.AppUser).where(models.AppUser.user_id == user_id, models.AppUser.is_anchor == True)
     result = await db.execute(stmt)
     anchor = result.scalar_one_or_none()
     if not anchor:

@@ -16,6 +16,7 @@ class Anchor(Base):
     follow_count = Column(Integer, default=0)
     fans_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
+    call_price = Column(Integer, default=3600)
     is_review = Column(Boolean, default=False)
     tags = Column(String)
     info = Column(String)

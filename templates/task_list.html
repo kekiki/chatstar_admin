@@ -55,6 +55,8 @@
                     <th>通话卡</th>
                     <th>匹配卡</th>
                     <th>聊天卡</th>
+                    <th>排序</th>
+                    <th>状态</th>
                     <th>操作</th>
                 </tr>
             </thead>
@@ -88,10 +90,18 @@
                         {% endif %}
                     </td>
                     <td>{{ item.num or 0 }}</td>
-                    <td>{{ item.diamonds or 0 }}</td>
+                    <td>{{ item.reward_diamonds or 0 }}</td>
                     <td>{{ item.call_card_num or 0 }}</td>
                     <td>{{ item.match_card_num or 0 }}</td>
                     <td>{{ item.chat_card_num or 0 }}</td>
+                    <td>{{ item.sort or 0 }}</td>
+                    <td>
+                        {% if item.status == 1 %}
+                        <span class="badge bg-success">上架</span>
+                        {% else %}
+                        <span class="badge bg-secondary">下架</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-warning edit-task-btn"
                                 data-id="{{ item.id }}"
@@ -101,10 +111,12 @@
                                 data-num="{{ item.num or 0 }}"
                                 data-category="{{ item.category or 0 }}"
                                 data-type="{{ item.type or 0 }}"
-                                data-diamonds="{{ item.diamonds or 0 }}"
+                                data-reward-diamonds="{{ item.reward_diamonds or 0 }}"
                                 data-call-card-num="{{ item.call_card_num or 0 }}"
                                 data-match-card-num="{{ item.match_card_num or 0 }}"
-                                data-chat-card-num="{{ item.chat_card_num or 0 }}">编辑</button>
+                                data-chat-card-num="{{ item.chat_card_num or 0 }}"
+                                data-sort="{{ item.sort or 0 }}"
+                                data-status="{{ item.status if item.status is not none else 1 }}">编辑</button>
                         <button class="btn btn-sm btn-danger delete-task-btn ms-1" data-id="{{ item.id }}">删除</button>
                     </td>
                 </tr>
@@ -169,7 +181,7 @@
                     </div>
                     <div class="mb-3">
                         <label>钻石奖励</label>
-                        <input type="number" name="diamonds" class="form-control" value="0">
+                        <input type="number" name="reward_diamonds" class="form-control" value="0">
                     </div>
                     <div class="row g-2">
                         <div class="col-md-4">
@@ -183,6 +195,19 @@
                         <div class="col-md-4">
                             <label>聊天卡</label>
                             <input type="number" name="chat_card_num" class="form-control" value="0">
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-6">
+                            <label>排序</label>
+                            <input type="number" name="sort" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label>状态</label>
+                            <select name="status" class="form-select">
+                                <option value="1">上架</option>
+                                <option value="0">下架</option>
+                            </select>
                         </div>
                     </div>
                 </form>
@@ -238,7 +263,7 @@
                     </div>
                     <div class="mb-3">
                         <label>钻石奖励</label>
-                        <input type="number" name="diamonds" id="editTaskDiamonds" class="form-control" value="0">
+                        <input type="number" name="reward_diamonds" id="editTaskRewardDiamonds" class="form-control" value="0">
                     </div>
                     <div class="row g-2">
                         <div class="col-md-4">
@@ -252,6 +277,19 @@
                         <div class="col-md-4">
                             <label>聊天卡</label>
                             <input type="number" name="chat_card_num" id="editTaskChatCardNum" class="form-control" value="0">
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-6">
+                            <label>排序</label>
+                            <input type="number" name="sort" id="editTaskSort" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label>状态</label>
+                            <select name="status" id="editTaskStatus" class="form-select">
+                                <option value="1">上架</option>
+                                <option value="0">下架</option>
+                            </select>
                         </div>
                     </div>
                 </form>
@@ -309,10 +347,12 @@ function getTaskFormValues(form) {
         num: parseInt(form.find('[name=num]').val()) || 0,
         category: parseInt(form.find('[name=category]').val()) || 0,
         type: form.find('[name=type]').val(),
-        diamonds: parseInt(form.find('[name=diamonds]').val()) || 0,
+        reward_diamonds: parseInt(form.find('[name=reward_diamonds]').val()) || 0,
         call_card_num: parseInt(form.find('[name=call_card_num]').val()) || 0,
         match_card_num: parseInt(form.find('[name=match_card_num]').val()) || 0,
-        chat_card_num: parseInt(form.find('[name=chat_card_num]').val()) || 0
+        chat_card_num: parseInt(form.find('[name=chat_card_num]').val()) || 0,
+        sort: parseInt(form.find('[name=sort]').val()) || 0,
+        status: parseInt(form.find('[name=status]').val()) || 0
     };
 }
 
@@ -325,10 +365,12 @@ $(".edit-task-btn").click(function(){
     $("#editTaskNum").val(btn.attr("data-num"));
     $("#editTaskCategory").val(btn.attr("data-category"));
     $("#editTaskType").val(btn.attr("data-type"));
-    $("#editTaskDiamonds").val(btn.attr("data-diamonds"));
+    $("#editTaskRewardDiamonds").val(btn.attr("data-reward-diamonds"));
     $("#editTaskCallCardNum").val(btn.attr("data-call-card-num"));
     $("#editTaskMatchCardNum").val(btn.attr("data-match-card-num"));
     $("#editTaskChatCardNum").val(btn.attr("data-chat-card-num"));
+    $("#editTaskSort").val(btn.attr("data-sort"));
+    $("#editTaskStatus").val(btn.attr("data-status"));
     if (btn.attr("data-icon")) {
         $("#editTaskIconPreview").html('<img src="' + btn.attr("data-icon") + '" style="width:80px;height:80px;object-fit:contain;">');
     } else {

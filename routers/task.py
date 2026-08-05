@@ -25,7 +25,7 @@ async def task_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = select(models.Task).order_by(models.Task.category.asc(), models.Task.id.asc())
+    q = select(models.Task).order_by(models.Task.sort.asc(), models.Task.category.asc(), models.Task.id.asc())
 
     if keyword:
         q = q.where(
@@ -98,10 +98,12 @@ async def add_task(
     num: int = Body(0),
     category: int = Body(0),
     type: str = Body(""),
-    diamonds: int = Body(0),
+    reward_diamonds: int = Body(0),
     call_card_num: int = Body(0),
     match_card_num: int = Body(0),
     chat_card_num: int = Body(0),
+    sort: int = Body(0),
+    status: int = Body(1),
     db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -113,8 +115,9 @@ async def add_task(
 
     new_task = models.Task(
         name=name, desc=desc, icon=icon, num=num,
-        category=category, type=type, diamonds=diamonds,
-        call_card_num=call_card_num, match_card_num=match_card_num, chat_card_num=chat_card_num
+        category=category, type=type, reward_diamonds=reward_diamonds,
+        call_card_num=call_card_num, match_card_num=match_card_num, chat_card_num=chat_card_num,
+        sort=sort, status=status
     )
     db.add(new_task)
     await db.commit()
@@ -131,10 +134,12 @@ async def update_task(
     num: int = Body(0),
     category: int = Body(0),
     type: str = Body(""),
-    diamonds: int = Body(0),
+    reward_diamonds: int = Body(0),
     call_card_num: int = Body(0),
     match_card_num: int = Body(0),
     chat_card_num: int = Body(0),
+    sort: int = Body(0),
+    status: int = Body(1),
     db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -153,10 +158,12 @@ async def update_task(
     task.num = num
     task.category = category
     task.type = type
-    task.diamonds = diamonds
+    task.reward_diamonds = reward_diamonds
     task.call_card_num = call_card_num
     task.match_card_num = match_card_num
     task.chat_card_num = chat_card_num
+    task.sort = sort
+    task.status = status
 
     await db.commit()
     await db.refresh(task)

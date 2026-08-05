@@ -384,7 +384,13 @@ $("#submitAddTask").click(function(){
     const v = getTaskFormValues(form);
     if (!v.name) { showToast("请填写任务名称", "warning"); return; }
     apiRequest("/admin/api/add_task", "POST", v, {
-        onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addTaskModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }
+        onSuccess: function(){
+            form[0].reset();
+            $("#addTaskIcon").val('');
+            $("#addTaskIconPreview").html('');
+            bootstrap.Modal.getInstance(document.getElementById('addTaskModal'))?.hide();
+            setTimeout(function(){ location.reload(); }, 800);
+        }
     });
 })
 

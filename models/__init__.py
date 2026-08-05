@@ -9,5 +9,6 @@ from .black_white import BlackWhiteUser, BlackWhiteIp, BlackWhiteDevice
 from .product import Product
 from .gift import Gift
 from .task import Task
+from .config import AppConfig
 
-__all__ = ['AdminUser', 'AppList', 'AppReview', 'AppUser', 'PayOrder', 'DailyStat', 'Media', 'BlackWhiteUser', 'BlackWhiteIp', 'BlackWhiteDevice', 'Product', 'Gift', 'Task']
+__all__ = ['AdminUser', 'AppList', 'AppReview', 'AppUser', 'PayOrder', 'DailyStat', 'Media', 'BlackWhiteUser', 'BlackWhiteIp', 'BlackWhiteDevice', 'Product', 'Gift', 'Task', 'AppConfig']

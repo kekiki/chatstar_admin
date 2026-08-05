@@ -9,6 +9,7 @@ from .product import router as product_router
 from .gift import router as gift_router
 from .media import router as media_router
 from .task import router as task_router
+from .app_config import router as app_config_router
 
-__all__ = ['auth_router', 'dashboard_router', 'user_router', 'anchor_router', 'order_router', 'app_list_router', 'app_review_router', 'product_router', 'gift_router', 'media_router', 'task_router']
+__all__ = ['auth_router', 'dashboard_router', 'user_router', 'anchor_router', 'order_router', 'app_list_router', 'app_review_router', 'product_router', 'gift_router', 'media_router', 'task_router', 'app_config_router']
     

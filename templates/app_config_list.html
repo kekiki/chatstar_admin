@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>应用配置</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addConfigModal">新增配置</button>
+</div>
+<hr>
+<div class="card mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0 compact-table">
+            <thead class="table-dark">
+                <tr>
+                    <th class="small-cell">ID</th>
+                    <th class="ellipsis-cell">包名</th>
+                    <th class="small-cell">版本</th>
+                    <th class="ellipsis-cell">Key</th>
+                    <th class="ellipsis-cell">Value</th>
+                    <th class="ellipsis-cell">备注</th>
+                    <th class="small-cell">创建时间</th>
+                    <th class="action-cell">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for config in configs %}
+                <tr>
+                    <td>{{ config.id }}</td>
+                    <td class="ellipsis-cell" title="{{ config.package_name }}">{{ config.package_name }}</td>
+                    <td>{{ config.app_version or '-' }}</td>
+                    <td class="ellipsis-cell" title="{{ config.key }}">{{ config.key }}</td>
+                    <td class="ellipsis-cell" title="{{ config.value }}">{{ config.value }}</td>
+                    <td class="ellipsis-cell" title="{{ config.remark }}">{{ config.remark or '-' }}</td>
+                    <td>{{ config.created_time.strftime('%Y-%m-%d %H:%M') if config.created_time else '-' }}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-secondary btn-edit" data-id="{{ config.id }}" data-package_name="{{ config.package_name }}" data-app_version="{{ config.app_version or '' }}" data-key="{{ config.key }}" data-value="{{ config.value }}" data-remark="{{ config.remark or '' }}">编辑</button>
+                        <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="{{ config.id }}">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新增配置弹窗 -->
+<div class="modal fade" id="addConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增应用配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addConfigForm">
+                    <div class="mb-3">
+                        <label>应用</label>
+                        <select name="package_name" class="form-select" required>
+                            <option value="">请选择应用</option>
+                            {% for app in apps %}
+                            <option value="{{ app.package_name }}">{{ app.app_name }}（{{ app.package_name }}）</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>版本号</label>
+                        <input type="text" name="app_version" class="form-control" placeholder="留空表示所有版本">
+                    </div>
+                    <div class="mb-3">
+                        <label>Key</label>
+                        <input type="text" name="key" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Value</label>
+                        <textarea name="value" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>备注</label>
+                        <textarea name="remark" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitAddConfig">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑配置弹窗 -->
+<div class="modal fade" id="editConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑应用配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editConfigForm">
+                    <input type="hidden" name="id">
+                    <div class="mb-3">
+                        <label>应用</label>
+                        <select name="package_name" class="form-select" required>
+                            <option value="">请选择应用</option>
+                            {% for app in apps %}
+                            <option value="{{ app.package_name }}">{{ app.app_name }}（{{ app.package_name }}）</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>版本号</label>
+                        <input type="text" name="app_version" class="form-control" placeholder="留空表示所有版本">
+                    </div>
+                    <div class="mb-3">
+                        <label>Key</label>
+                        <input type="text" name="key" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Value</label>
+                        <textarea name="value" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>备注</label>
+                        <textarea name="remark" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button class="btn btn-success" id="submitEditConfig">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+setupModalEnter('addConfigModal', 'submitAddConfig');
+setupModalEnter('editConfigModal', 'submitEditConfig');
+
+function openEditModal(config) {
+    const modal = new bootstrap.Modal(document.getElementById('editConfigModal'));
+    const form = $("#editConfigForm");
+    form.find("[name=id]").val(config.id);
+    form.find("[name=package_name]").val(config.package_name).trigger("change");
+    form.find("[name=app_version]").val(config.app_version);
+    form.find("[name=key]").val(config.key);
+    form.find("[name=value]").val(config.value);
+    form.find("[name=remark]").val(config.remark);
+    modal.show();
+}
+
+$(document).on('click', '.btn-edit', function(){
+    openEditModal({
+        id: $(this).attr('data-id'),
+        package_name: $(this).attr('data-package_name'),
+        app_version: $(this).attr('data-app_version'),
+        key: $(this).attr('data-key'),
+        value: $(this).attr('data-value'),
+        remark: $(this).attr('data-remark')
+    });
+});
+
+$(document).on('click', '.btn-delete', function(){
+    const id = $(this).data('id');
+    const $tr = $(this).closest('tr');
+    apiRequest("/admin/api/delete_app_config?id=" + id, "DELETE", null, {
+        onSuccess: function(){ $tr.fadeOut(300, function(){ $(this).remove(); }); }
+    });
+});
+
+$("#submitAddConfig").click(function(){
+    const form = $("#addConfigForm");
+    const package_name = form.find("[name=package_name]").val();
+    const key = form.find("[name=key]").val();
+    if (!package_name || !key) { showToast("请选择应用并填写Key", "warning"); return; }
+    apiRequest("/admin/api/add_app_config", "POST", {
+        package_name,
+        app_version: form.find("[name=app_version]").val(),
+        key,
+        value: form.find("[name=value]").val(),
+        remark: form.find("[name=remark]").val()
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addConfigModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
+});
+
+$("#submitEditConfig").click(function(){
+    const form = $("#editConfigForm");
+    const id = form.find("[name=id]").val();
+    const package_name = form.find("[name=package_name]").val();
+    const key = form.find("[name=key]").val();
+    if (!id || !package_name || !key) { showToast("请选择应用并填写Key", "warning"); return; }
+    apiRequest("/admin/api/update_app_config", "PUT", {
+        id: Number(id),
+        package_name,
+        app_version: form.find("[name=app_version]").val(),
+        key,
+        value: form.find("[name=value]").val(),
+        remark: form.find("[name=remark]").val()
+    }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editConfigModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
+});
+</script>
+{% endblock %}

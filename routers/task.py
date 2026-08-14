@@ -25,7 +25,7 @@ async def task_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = select(models.Task).order_by(models.Task.sort.asc(), models.Task.category.asc(), models.Task.id.asc())
+    q = select(models.Task).order_by(models.Task.id.asc())
 
     if keyword:
         q = q.where(

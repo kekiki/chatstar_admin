@@ -40,6 +40,7 @@
                     <th class="small-cell">用户ID</th>
                     <th>封面</th>
                     <th class="small-cell">视频</th>
+                    <th class="small-cell">视频类型</th>
                     <th class="small-cell">VIP</th>
                     <th class="small-cell">创建时间</th>
                     <th class="action-cell">操作</th>
@@ -67,6 +68,19 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% if item.is_video %}
+                            {% if item.video_type == 1 %}
+                            <span class="badge bg-info">通话视频</span>
+                            {% elif item.video_type == 2 %}
+                            <span class="badge bg-warning">直播视频</span>
+                            {% else %}
+                            <span class="badge bg-secondary">普通视频</span>
+                            {% endif %}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if item.is_vip %}
                         <span class="badge bg-success">是</span>
                         {% else %}
@@ -87,7 +101,8 @@
                                 data-cover="{{ item.cover }}"
                                 data-url="{{ item.url }}"
                                 data-is_video="{{ item.is_video }}"
-                                data-is_vip="{{ item.is_vip }}">
+                                data-is_vip="{{ item.is_vip }}"
+                                data-video_type="{{ item.video_type or 0 }}">
                             编辑
                         </button>
                         <button type="button" class="btn btn-sm btn-danger delete-media-btn" data-id="{{ item.id }}">删除</button>
@@ -135,6 +150,14 @@
                             <div id="addMediaPreview" class="mt-2"></div>
                         </div>
                         <div class="col-md-6">
+                            <label>视频类型</label>
+                            <select name="video_type" class="form-select">
+                                <option value="0" selected>普通视频</option>
+                                <option value="1">通话视频</option>
+                                <option value="2">直播视频</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
                             <p><label>是否VIP</label></p>
                             <label class="radio-item me-3">
                                 <input type="radio" name="is_vip" value="true">
@@ -180,6 +203,14 @@
                             <div id="editMediaPreview" class="mt-2"></div>
                         </div>
                         <div class="col-md-6">
+                            <label>视频类型</label>
+                            <select name="video_type" class="form-select">
+                                <option value="0">普通视频</option>
+                                <option value="1">通话视频</option>
+                                <option value="2">直播视频</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
                             <p><label>是否VIP</label></p>
                             <label class="radio-item me-3">
                                 <input type="radio" name="is_vip" value="true">
@@ -216,6 +247,7 @@ function openeditMediaModal(data) {
     form.find('[name=media]').val(data.url);
     form.find('[name=cover]').val(data.cover || '');
     form.find('[name=is_vip][value=' + (data.is_vip ? 'true' : 'false') + ']').prop('checked', true);
+    form.find('[name=video_type]').val(String(data.video_type || 0));
     if (data.is_video) {
         $('#editMediaPreview').html('<video src="' + data.url + '" style="width:160px;height:160px;object-fit:contain;" controls></video>');
     } else if (data.cover || data.url) {
@@ -232,7 +264,8 @@ $(document).on('click', '.edit-media-btn', function() {
         id: b.data('id'), user_id: b.data('user_id'), cover: b.data('cover'),
         url: b.data('url'),
         is_video: b.data('is_video') === true || b.data('is_video') === 'True' || b.data('is_video') === 'true',
-        is_vip: b.data('is_vip') === true || b.data('is_vip') === 'True' || b.data('is_vip') === 'true'
+        is_vip: b.data('is_vip') === true || b.data('is_vip') === 'True' || b.data('is_vip') === 'true',
+        video_type: Number(b.data('video_type')) || 0
     });
 });
 
@@ -293,6 +326,7 @@ $('#submitAddMedia').click(async function() {
         user_id, url: form.find('[name=media]').val(),
         cover: form.find('[name=cover]').val(),
         is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : false,
+        video_type: Number(form.find('[name=video_type]').val()) || 0,
         is_vip: form.find('[name=is_vip]:checked').val() === 'true'
     }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addMediaModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
@@ -310,6 +344,7 @@ $('#submitEditMedia').click(async function() {
         id: Number(form.find('[name=id]').val()), user_id,
         url: form.find('[name=media]').val(), cover: form.find('[name=cover]').val(),
         is_video: fileInput.files.length > 0 ? fileInput.files[0].type.startsWith('video/') : currentEditMediaData.is_video,
+        video_type: Number(form.find('[name=video_type]').val()) || 0,
         is_vip: form.find('[name=is_vip]:checked').val() === 'true'
     }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editMediaModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });

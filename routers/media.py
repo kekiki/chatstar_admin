@@ -174,6 +174,7 @@ async def add_media(
     user_id: int = Body(0),
     is_vip: bool = Body(False),
     is_video: bool = Body(False),
+    video_type: int = Body(0),
     db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -184,7 +185,8 @@ async def add_media(
         url=url,
         cover=cover,
         is_vip=is_vip,
-        is_video=is_video
+        is_video=is_video,
+        video_type=video_type
     )
     db.add(new_media)
     await db.commit()
@@ -198,7 +200,8 @@ async def add_media(
             "url": new_media.url,
             "cover": new_media.cover,
             "is_vip": new_media.is_vip,
-            "is_video": new_media.is_video
+            "is_video": new_media.is_video,
+            "video_type": new_media.video_type
         }
     }
 
@@ -211,6 +214,7 @@ async def update_media(
     cover: str = Body(None),
     is_vip: bool = Body(False),
     is_video: bool = Body(None),
+    video_type: int = Body(None),
     db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -232,6 +236,8 @@ async def update_media(
         media.is_vip = is_vip
     if is_video is not None:
         media.is_video = is_video
+    if video_type is not None:
+        media.video_type = video_type
 
     await db.commit()
     await db.refresh(media)
@@ -244,7 +250,8 @@ async def update_media(
             "url": media.url,
             "cover": media.cover,
             "is_vip": media.is_vip,
-            "is_video": media.is_video
+            "is_video": media.is_video,
+            "video_type": media.video_type
         }
     }
 

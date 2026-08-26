@@ -29,6 +29,7 @@
                     <th class="small-cell">关注</th>
                     <th class="small-cell">粉丝</th>
                     <th class="small-cell">点赞</th>
+                    <th class="ellipsis-cell">标签</th>
                     <th class="small-cell">审核</th>
                     <th class="small-cell">创建时间</th>
                     <th class="action-cell">操作</th>
@@ -52,6 +53,7 @@
                     <td class="small-cell">{{ item.follow_count }}</td>
                     <td class="small-cell">{{ item.fans_count }}</td>
                     <td class="small-cell">{{ item.like_count }}</td>
+                    <td class="ellipsis-cell" title="{{ item.tags or '-' }}">{{ item.tags or '-' }}</td>
                     <td>
                         {% if item.is_review %}
                         <span class="badge bg-success">是</span>
@@ -78,6 +80,7 @@
                                 data-follow_count="{{ item.follow_count }}"
                                 data-fans_count="{{ item.fans_count }}"
                                 data-like_count="{{ item.like_count }}"
+                                data-tags="{{ item.tags or '' }}"
                                 data-is_review="{{ item.is_review }}">
                             编辑
                         </button>
@@ -153,6 +156,10 @@
                             <input type="number" name="like_count" class="form-control" value="0">
                         </div>
                         <div class="col-md-6">
+                            <label>标签（多个用英文逗号分隔）</label>
+                            <input type="text" name="tags" class="form-control" placeholder="如：美女,才艺,户外">
+                        </div>
+                        <div class="col-md-6">
                             <p><label>审核模式</label></p>
                             <label class="radio-item me-3">
                                 <input type="radio" name="is_review" value="true">
@@ -225,6 +232,10 @@
                             <input type="number" name="like_count" class="form-control">
                         </div>
                         <div class="col-md-6">
+                            <label>标签（多个用英文逗号分隔）</label>
+                            <input type="text" name="tags" class="form-control" placeholder="如：美女,才艺,户外">
+                        </div>
+                        <div class="col-md-6">
                             <p><label>审核模式</label></p>
                             <label class="radio-item me-3">
                                 <input type="radio" name="is_review" value="true">
@@ -263,6 +274,7 @@ function openEditAnchorModal(data) {
     form.find('[name=follow_count]').val(data.follow_count);
     form.find('[name=fans_count]').val(data.fans_count);
     form.find('[name=like_count]').val(data.like_count);
+    form.find('[name=tags]').val(data.tags);
     form.find('[name=is_review][value=' + (data.is_review ? 'true' : 'false') + ']').prop('checked', true);
     if (data.avatar) {
         $('#editAvatarPreview').html('<img src="' + data.avatar + '" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">');
@@ -280,6 +292,7 @@ $(document).on('click', '.edit-anchor-btn', function() {
         language_name: b.data('language_name'), language_code: b.data('language_code'),
         follow_count: b.data('follow_count'), fans_count: b.data('fans_count'),
         like_count: b.data('like_count'),
+        tags: b.data('tags'),
         is_review: b.data('is_review') === true || b.data('is_review') === 'True' || b.data('is_review') === 'true'
     });
 });
@@ -341,6 +354,7 @@ $('#submitAddAnchor').click(async function() {
         follow_count: Number(form.find('[name=follow_count]').val() || 0),
         fans_count: Number(form.find('[name=fans_count]').val() || 0),
         like_count: Number(form.find('[name=like_count]').val() || 0),
+        tags: form.find('[name=tags]').val(),
         is_review: form.find('[name=is_review]:checked').val() === 'true'
     }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('addAnchorModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });
@@ -364,6 +378,7 @@ $('#submitEditAnchor').click(async function() {
         follow_count: Number(form.find('[name=follow_count]').val() || 0),
         fans_count: Number(form.find('[name=fans_count]').val() || 0),
         like_count: Number(form.find('[name=like_count]').val() || 0),
+        tags: form.find('[name=tags]').val(),
         is_review: form.find('[name=is_review]:checked').val() === 'true'
     }, {onSuccess: function(){ bootstrap.Modal.getInstance(document.getElementById('editAnchorModal'))?.hide(); setTimeout(function(){ location.reload(); }, 800); }});
 });

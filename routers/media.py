@@ -123,17 +123,14 @@ async def upload_media(
     try:
         # 读取文件内容
         file_bytes = await file.read()
-        file_content_type = file.content_type
 
         # 如果是图片，先进行缩放/压缩/转码，尽量减小体积并保持清晰度
         upload_bytes = file_bytes
-        upload_content_type = file_content_type
         upload_filename = file.filename
-        if file_content_type and file_content_type.startswith('image/'):
+        if file.content_type and file.content_type.startswith('image/'):
             try:
                 comp = compress_image(file_bytes, max_width=480, quality=85)
                 upload_bytes = comp.get("bytes", file_bytes)
-                upload_content_type = comp.get("content_type", file_content_type)
                 base = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename
                 ext = comp.get("ext") or (file.filename.rsplit('.', 1)[-1] if '.' in file.filename else '')
                 upload_filename = f"{base}.{ext}" if ext else upload_filename
@@ -141,17 +138,17 @@ async def upload_media(
                 print(f"Image compress failed, will upload original: {e}")
 
         r2_client = R2Client()
-        link_info = await r2_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
+        link_info = await r2_client.upload_and_get_link(upload_bytes, upload_filename)
         
         cover_url = None
         # 如果是视频，自动生成封面
-        if file_content_type.startswith('video/'):
+        if file.content_type.startswith('video/'):
             print(f"Video detected, generating thumbnail...")
             thumbnail_bytes = generate_video_thumbnail(file_bytes, file.filename)
             if thumbnail_bytes:
                 print(f"Thumbnail generated successfully, uploading...")
                 thumbnail_filename = f"thumb_{file.filename.rsplit('.', 1)[0]}.jpg"
-                cover_info = await r2_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename, 'image/jpeg')
+                cover_info = await r2_client.upload_and_get_link(thumbnail_bytes, thumbnail_filename)
                 cover_url = cover_info["url"]
                 print(f"Thumbnail uploaded: {cover_url}")
             else:

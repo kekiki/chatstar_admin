@@ -73,16 +73,13 @@ async def upload_avatar(
     
     try:
         file_bytes = await file.read()
-        file_content_type = file.content_type
 
         upload_bytes = file_bytes
-        upload_content_type = file_content_type
         upload_filename = file.filename
-        if file_content_type and file_content_type.startswith('image/'):
+        if file.content_type and file.content_type.startswith('image/'):
             try:
                 comp = compress_image(file_bytes, max_width=480, quality=85)
                 upload_bytes = comp.get("bytes", file_bytes)
-                upload_content_type = comp.get("content_type", file_content_type)
                 base = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename
                 ext = comp.get("ext") or (file.filename.rsplit('.', 1)[-1] if '.' in file.filename else '')
                 upload_filename = f"{base}.{ext}" if ext else upload_filename
@@ -90,7 +87,7 @@ async def upload_avatar(
                 print(f"Avatar compress failed, uploading original image: {e}")
 
         r2_client = R2Client()
-        link_info = await r2_client.upload_and_get_link(upload_bytes, upload_filename, upload_content_type)
+        link_info = await r2_client.upload_and_get_link(upload_bytes, upload_filename)
         
         return {
             "code": 200,

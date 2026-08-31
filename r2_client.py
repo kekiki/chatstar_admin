@@ -28,26 +28,31 @@ class R2Client:
         content_type, _ = mimetypes.guess_type(file_path, strict=False)
         return content_type
     
-    async def get_r2_upload_url(self, suffixe: str):
-        # 请求到Workers生成预签名直链
-        async with httpx.AsyncClient() as client:
-            file_name = self.generate_filename(suffixe)
-            content_type = self.get_content_type(file_name)
-            resp = await client.post(
-                WORKER_API_URL,
-                headers = {
-                    "Content-Type": "applcation/json",
-                },
-                json={
-                    "fileName": file_name,
-                    "contentType": content_type
-                },
-                timeout=10
-            )
-            if resp.status_code != 200:
-                raise HTTPException(status_code=500, detail="获取R2上传直链失败")
+    async def get_r2_upload_url(self, suffix: str):
+        try:
+            file_name = self.generate_filename(suffix)
+            object_key = f'uploads/{self.generate_filename(file_name.split(".")[-1])}'
+            # content_type = self.get_content_type(file_name)
 
-        return resp.json()
+            # 生成PUT预签名URL
+            upload_url = self.r2_client.generate_presigned_url(
+                ClientMethod="put_object",
+                Params={
+                    "Bucket": self.bucket_name,
+                    "Key": object_key,
+                    # ⚠️ 重要：这里不要写ContentType！
+                    # 如果在这里写content_type，前端PUT请求必须严格带上一模一样的Content‑Type，否则签名不匹配
+                },
+                ExpiresIn=3600,
+            )
+            public_url = f"{R2_PUBLIC_DOMAIN}/{object_key}"
+
+            return {
+                "upload_url": upload_url,
+                "public_url": public_url
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"生成预签名失败:{str(e)}")
 
     # 后端PUT上传示例
     async def put_file_to_r2(self, upload_url, file_bytes, content_type):

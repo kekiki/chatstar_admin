@@ -172,7 +172,7 @@ async def _apply_order_assets(db: AsyncSession, order, sign: int):
 @router.post("/admin/api/supplement_order")
 async def supplement_order(
     request: Request,
-    id: int = Body(...),
+    id: int = Body(..., embed=True),
     db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):
@@ -196,7 +196,7 @@ async def supplement_order(
 @router.post("/admin/api/refund_order")
 async def refund_order(
     request: Request,
-    id: int = Body(...),
+    id: int = Body(..., embed=True),
     db: AsyncSession = Depends(get_db),
     _user=Depends(lambda: None)
 ):

@@ -14,7 +14,7 @@ class PayOrder(Base):
     updated_time = Column(Integer, index=True)
     sku = Column(String, index=True)
     type = Column(Integer, default=0, index=True)# 0钻石 1首充 2VIP
-    order_status = Column(Integer, default=0, index=True)# 0待支付 1支付成功 2支付失败
+    order_status = Column(Integer, default=0, index=True)# 0待支付 1支付成功 2支付失败 3已退单
     currency_code = Column(String, default="USD")
     currency_price = Column(Integer, default=0)
     pp_id = Column(Integer, default=0, index=True)

@@ -213,7 +213,7 @@
                     </div>
                     <div class="mb-3">
                         <label>余额</label>
-                        <input type="number" name="balance" id="editBalance" class="form-control">
+                        <input type="number" name="balance" id="editBalance" class="form-control" disabled>
                     </div>
                     <div class="mb-3">
                         <label>VIP到期时间</label>
@@ -317,7 +317,6 @@ $("#submitEditUser").click(function(){
         user_id: parseInt(form.find("[name=user_id]").val()),
         nickname: form.find("[name=nickname]").val(),
         country: form.find("[name=country]").val(),
-        balance: parseInt(form.find("[name=balance]").val()) || 0,
         vip_expire_time: fromDatetimeLocal(form.find("[name=vip_expire_time]").val()),
         account_status: form.find("[name=account_status]").val(),
         ip_status: form.find("[name=ip_status]").val(),

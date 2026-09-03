@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>付费订单列表</h2>
-    <a class="btn btn-success" href="/admin/order/export?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}">导出Excel</a>
+    <h2>订单列表</h2>
+    <a class="btn btn-success"
+        href="/admin/order/export?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}">导出Excel</a>
 </div>
 <form action="/admin/order" method="get" class="row g-3 mb-4 align-items-end">
     <div class="col-auto">
@@ -20,9 +21,10 @@
     <div class="col-auto">
         <label>订单状态</label>
         <select class="form-select" name="status">
-            <option value="-1" {% if status == -1 %}selected{% endif %}>全部</option>
-            <option value="1" {% if status == 1 %}selected{% endif %}>已支付</option>
-            <option value="0" {% if status == 0 %}selected{% endif %}>未支付</option>
+            <option value="-1" {% if status==-1 %}selected{% endif %}>全部</option>
+            <option value="1" {% if status==1 %}selected{% endif %}>已支付</option>
+            <option value="0" {% if status==0 %}selected{% endif %}>未支付</option>
+            <option value="3" {% if status==3 %}selected{% endif %}>已退单</option>
         </select>
     </div>
     <div class="col-auto">
@@ -49,24 +51,38 @@
                     <th class="small-cell">创建时间</th>
                     <th class="small-cell">支付时间</th>
                     <th class="small-cell">APP版本</th>
+                    <th class="small-cell">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_data.list %}
                 <tr>
-                    <td class="ellipsis-cell" title="{{ item.package_name }}">{{ app_name_map.get(item.package_name, item.package_name) or '' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.package_name }}">{{ app_name_map.get(item.package_name,
+                        item.package_name) or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.transaction_no }}">{{ item.transaction_no or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.order_no }}">{{ item.order_no or '' }}</td>
                     <td class="small-cell">{{ item.user_id or '' }}</td>
                     <td class="small-cell">{{ item.anchor_id or '' }}</td>
-                    <td class="small-cell">{% if item.order_status == 1 %}已支付{% elif item.order_status == 2 %}支付失败{% else %}待支付{% endif %}</td>
-                    <td class="small-cell">{% if item.type == 1 %}首充{% elif item.type == 2 %}VIP{% else %}钻石{% endif %}</td>
-                    <td class="small-cell">{{ product_price_map.get((item.package_name, item.sku), item.currency_price) or '' }}</td>
+                    <td class="small-cell">{% if item.order_status == 1 %}已支付{% elif item.order_status == 2 %}支付失败{% elif item.order_status == 3 %}已退单{%
+                        else %}待支付{% endif %}</td>
+                    <td class="small-cell">{% if item.type == 1 %}首充{% elif item.type == 2 %}VIP{% else %}钻石{% endif %}
+                    </td>
+                    <td class="small-cell">{{ product_price_map.get((item.package_name, item.sku), item.currency_price)
+                        or '' }}</td>
                     <td class="ellipsis-cell" title="{{ item.path }}">{{ item.path or '' }}</td>
                     <td class="small-cell">{{ item.currency_code or '' }}</td>
                     <td class="small-cell">{{ item.created_time | int | datetime_format }}</td>
                     <td class="small-cell">{{ item.updated_time | int | datetime_format }}</td>
-                    <td class="small-cell">{{ item.agent or '' }}</td>
+                    <td class="ellipsis-cell" title="{{ item.agent or '' }}">{{ item.agent or '' }}</td>
+                    <td class="action-cell">
+                        {% if item.order_status == 0 %}
+                        <button class="btn btn-sm btn-success" onclick="supplementOrder({{ item.id }})">补单</button>
+                        {% elif item.order_status == 1 %}
+                        <button class="btn btn-sm btn-danger" onclick="refundOrder({{ item.id }})">退单</button>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -77,13 +93,29 @@
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item {% if page_data.page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/order?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}&page={{ page_data.page-1 }}">上一页</a>
+                    <a class="page-link"
+                        href="/admin/order?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}&page={{ page_data.page-1 }}">上一页</a>
                 </li>
                 <li class="page-item {% if page_data.page == page_data.total_page %}disabled{% endif %}">
-                    <a class="page-link" href="/admin/order?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}&page={{ page_data.page+1 }}">下一页</a>
+                    <a class="page-link"
+                        href="/admin/order?keyword={{ keyword }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ status }}&page={{ page_data.page+1 }}">下一页</a>
                 </li>
             </ul>
         </nav>
     </div>
 </div>
+<script>
+function supplementOrder(id) {
+    if (!confirm('确认补单？将标记为已支付并给用户发放对应资产')) return;
+    apiRequest('/admin/api/supplement_order', 'POST', {id: id}, {
+        onSuccess: function() { setTimeout(function(){ location.reload(); }, 800); }
+    });
+}
+function refundOrder(id) {
+    if (!confirm('确认退单？将标记为已退单并回收用户对应资产')) return;
+    apiRequest('/admin/api/refund_order', 'POST', {id: id}, {
+        onSuccess: function() { setTimeout(function(){ location.reload(); }, 800); }
+    });
+}
+</script>
 {% endblock %}

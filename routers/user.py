@@ -41,7 +41,7 @@ async def user_list(
     apps_result = await db.execute(apps_stmt)
     apps = apps_result.scalars().all()
     page, page_size, offset = get_page_params(page, page_size)
-    q = select(models.AppUser)
+    q = select(models.AppUser).where(models.AppUser.is_anchor == False).order_by(models.AppUser.created_time.desc())
 
     if keyword:
         q = q.where(
@@ -113,7 +113,7 @@ async def update_user(
     avatar: str = Body(""),
     nickname: str = Body(""),
     country: str = Body(""),
-    balance: int = Body(0),
+    balance: int = Body(None),
     vip_expire_time: int = Body(None),
     is_review: Optional[bool] = Body(None),
     account_status: Optional[Union[int, str]] = Body(None),
@@ -136,8 +136,6 @@ async def update_user(
         user.nickname = nickname
     if country is not None:
         user.country = country
-    if balance is not None:
-        user.balance = balance
     if vip_expire_time is not None:
         user.vip_expire_time = vip_expire_time
     if is_review is not None:

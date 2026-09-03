@@ -10,5 +10,6 @@ from .product import Product
 from .gift import Gift
 from .task import Task
 from .config import AppConfig
+from .transaction import Transaction
 
-__all__ = ['AdminUser', 'AppList', 'AppReview', 'AppUser', 'PayOrder', 'DailyStat', 'Media', 'BlackWhiteUser', 'BlackWhiteIp', 'BlackWhiteDevice', 'Product', 'Gift', 'Task', 'AppConfig']
+__all__ = ['AdminUser', 'AppList', 'AppReview', 'AppUser', 'PayOrder', 'DailyStat', 'Media', 'BlackWhiteUser', 'BlackWhiteIp', 'BlackWhiteDevice', 'Product', 'Gift', 'Task', 'AppConfig', 'Transaction']

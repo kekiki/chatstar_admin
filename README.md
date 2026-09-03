@@ -4,6 +4,10 @@
 1.进入你的项目文件夹
 ```bash
 cd ~/你的项目文件夹
+# 在项目目录执行
+pyenv local 3.12.13
+cat .python-version
+
 ```
 
 2. 创建名为 .venv 可访问全局包的虚拟环境

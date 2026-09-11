@@ -152,6 +152,7 @@ async def _apply_order_assets(db: AsyncSession, order, sign: int):
         diamonds = (product.diamonds or 0) + (product.reward_diamonds or 0)
         if diamonds:
             user.balance = max(0, (user.balance or 0) + sign * diamonds)
+            user.total = max(0, (user.total or 0) + sign * diamonds)
 
             transaction = Transaction(user_id=order.user_id, amount=sign * diamonds, asset_type=ASSET_DIAMOND, transaction_type=TRANSACTION_PURCHASE)
             db.add(transaction)

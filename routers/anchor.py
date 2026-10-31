@@ -238,6 +238,6 @@ async def delete_anchor(
     anchor = result.scalar_one_or_none()
     if not anchor:
         return {"code": 404, "msg": "主播不存在"}
-    db.delete(anchor)
+    await db.delete(anchor)
     await db.commit()
     return {"code": 200, "msg": "删除成功"}

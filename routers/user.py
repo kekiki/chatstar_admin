@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, Depends, Query, Body
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from passlib.hash import pbkdf2_sha256
 from sqlalchemy import select, or_, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
@@ -110,9 +111,9 @@ async def user_list(
 async def update_user(
     request: Request,
     user_id: int = Body(...),
-    avatar: str = Body(""),
-    nickname: str = Body(""),
-    country: str = Body(""),
+    avatar: Optional[str] = Body(None),
+    nickname: Optional[str] = Body(None),
+    country: Optional[str] = Body(None),
     balance: int = Body(None),
     vip_expire_time: int = Body(None),
     is_review: Optional[bool] = Body(None),
@@ -235,12 +236,11 @@ async def update_user(
 async def change_password(
     request: Request,
     user_id: int = Body(...),
-    new_password: str = Body(...),
+    new_password: str = Body(..., min_length=1),
     db: AsyncSession = Depends(get_db),
     _user = Depends(lambda: None)
 ):
     from routers.auth import require_login
-    import hashlib
     _user = require_login(request, db)
     stmt = select(models.AppUser).where(models.AppUser.user_id == user_id)
     result = await db.execute(stmt)
@@ -248,8 +248,8 @@ async def change_password(
     if not user:
         return {"code": 404, "msg": "用户不存在"}
 
-    # Hash the password (using MD5 as it seems to be the existing method)
-    user.password = hashlib.md5(new_password.encode()).hexdigest()
+    # Match the default hash scheme used by the app API's password login.
+    user.password = pbkdf2_sha256.hash(new_password)
 
     await db.commit()
     await db.refresh(user)

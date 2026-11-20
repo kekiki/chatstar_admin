@@ -5,7 +5,7 @@ import datetime
 class AppUser(Base):
     __tablename__ = "app_users"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)
+    user_id = Column(Integer, index=True, unique=True)
     device_id = Column(String(64), index=True)
     package_name = Column(String(100), ForeignKey("app_list.package_name"), index=True)
     created_time = Column(Integer, default=lambda: int(datetime.datetime.now().timestamp()))
@@ -22,7 +22,15 @@ class AppUser(Base):
     is_review = Column(Boolean, default=False)
     agent = Column(String(255), default="")
     birthday = Column(Integer, default=lambda: int(datetime.datetime.now().timestamp() - 86400 * 365 * 25))
+    password = Column(String(255))
+    total = Column(Integer, default=0)
+    firebase_token = Column(String(255))
+    is_reward_received = Column(Boolean, default=False)
 
+    gender = Column(Integer, default=0)
+    call_card_num = Column(Integer, default=0)
+    match_card_num = Column(Integer, default=0)
+    chat_card_num = Column(Integer, default=0)
     is_anchor = Column(Boolean, default=False, index=True)
     age = Column(Integer, default=20)
     follow_count = Column(Integer, default=0)
@@ -39,6 +47,3 @@ class AppUser(Base):
     install_begin_timestamp_server_seconds = Column(Integer)
     install_version = Column(String(64))
     google_play_instant = Column(Boolean, default=False)
-    password = Column(String(255))
-    total = Column(Integer, default=0)
-    firebase_token = Column(String(255))

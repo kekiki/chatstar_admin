@@ -131,7 +131,7 @@ async def export_order(
         }
     )
 
-async def _apply_order_assets(db: AsyncSession, order, sign: int):
+async def _grant_order_assets(db: AsyncSession, order):
     if not order.user_id:
         return
     user_stmt = select(models.AppUser).where(
@@ -154,24 +154,17 @@ async def _apply_order_assets(db: AsyncSession, order, sign: int):
     if order.type in (0, 1):
         diamonds = (product.diamonds or 0) + (product.reward_diamonds or 0)
         if diamonds:
-            user.balance = max(0, (user.balance or 0) + sign * diamonds)
-            user.total = max(0, (user.total or 0) + sign * diamonds)
+            user.balance = max(0, (user.balance or 0) + diamonds)
+            user.total = max(0, (user.total or 0) + diamonds)
 
-            transaction = Transaction(user_id=order.user_id, amount=sign * diamonds, asset_type=ASSET_DIAMOND, transaction_type=TRANSACTION_PURCHASE)
+            transaction = Transaction(user_id=order.user_id, amount=diamonds, asset_type=ASSET_DIAMOND, transaction_type=TRANSACTION_PURCHASE)
             db.add(transaction)
     elif order.type == 2 and product.vip_days:
-        if sign == 1:
-            base = user.vip_expire_time if user.vip_expire_time and user.vip_expire_time > now else now
-            user.vip_expire_time = base + product.vip_days * 86400
+        base = user.vip_expire_time if user.vip_expire_time and user.vip_expire_time > now else now
+        user.vip_expire_time = base + product.vip_days * 86400
 
-            transaction = Transaction(user_id=order.user_id, amount=product.vip_days, asset_type=ASSET_VIP, transaction_type=TRANSACTION_PURCHASE)
-            db.add(transaction)
-        else:
-            if user.vip_expire_time:
-                user.vip_expire_time = max(now, user.vip_expire_time - product.vip_days * 86400)
-
-            transaction = Transaction(user_id=order.user_id, amount=-product.vip_days, asset_type=ASSET_VIP, transaction_type=TRANSACTION_PURCHASE)
-            db.add(transaction)
+        transaction = Transaction(user_id=order.user_id, amount=product.vip_days, asset_type=ASSET_VIP, transaction_type=TRANSACTION_PURCHASE)
+        db.add(transaction)
 
 @router.post("/admin/api/supplement_order")
 async def supplement_order(
@@ -193,28 +186,6 @@ async def supplement_order(
         return {"code": 400, "msg": "订单已退单，无法补单"}
     order.order_status = 1
     order.updated_time = int(time.time())
-    await _apply_order_assets(db, order, 1)
+    await _grant_order_assets(db, order)
     await db.commit()
     return {"code": 200, "msg": "补单成功"}
-
-@router.post("/admin/api/refund_order")
-async def refund_order(
-    request: Request,
-    id: int = Body(..., embed=True),
-    db: AsyncSession = Depends(get_db),
-    _user=Depends(lambda: None)
-):
-    from routers.auth import require_login
-    _user = require_login(request, db)
-    stmt = select(models.PayOrder).where(models.PayOrder.id == id)
-    result = await db.execute(stmt)
-    order = result.scalar_one_or_none()
-    if not order:
-        return {"code": 404, "msg": "订单不存在"}
-    if order.order_status != 1:
-        return {"code": 400, "msg": "仅已支付订单可退单"}
-    order.order_status = 3
-    order.updated_time = int(time.time())
-    await _apply_order_assets(db, order, -1)
-    await db.commit()
-    return {"code": 200, "msg": "退单成功"}

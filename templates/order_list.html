@@ -78,8 +78,6 @@
                     <td>
                         {% if item.order_status == 0 %}
                         <button class="btn btn-sm btn-success" onclick="supplementOrder({{ item.id }})">补单</button>
-                        {% elif item.order_status == 1 %}
-                        <button class="btn btn-sm btn-danger" onclick="refundOrder({{ item.id }})">退单</button>
                         {% else %}
                         -
                         {% endif %}
@@ -109,12 +107,6 @@
 function supplementOrder(id) {
     if (!confirm('确认补单？将标记为已支付并给用户发放对应资产')) return;
     apiRequest('/admin/api/supplement_order', 'POST', {id: id}, {
-        onSuccess: function() { setTimeout(function(){ location.reload(); }, 800); }
-    });
-}
-function refundOrder(id) {
-    if (!confirm('确认退单？将标记为已退单并回收用户对应资产')) return;
-    apiRequest('/admin/api/refund_order', 'POST', {id: id}, {
         onSuccess: function() { setTimeout(function(){ location.reload(); }, 800); }
     });
 }

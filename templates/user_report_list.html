@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">用户举报列表</h2>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0 compact-table">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">举报 ID</th>
+                    <th scope="col">举报人 ID</th>
+                    <th scope="col">被举报人 ID</th>
+                    <th scope="col">举报原因</th>
+                    <th scope="col">举报时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_data.list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.user_id if item.user_id is not none else '-' }}</td>
+                    <td>{{ item.report_user_id if item.report_user_id is not none else '-' }}</td>
+                    <td class="text-wrap text-break">{{ item.reason or '-' }}</td>
+                    <td>{{ item.created_time.strftime('%Y-%m-%d %H:%M:%S') if item.created_time else '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-3">暂无举报记录</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span>共 {{ page_data.total }} 条{% if page_data.total_pages %}，第 {{ page_data.page }} / {{ page_data.total_pages }} 页{% endif %}</span>
+        {% if page_data.total_pages > 1 or page_data.page > 1 %}
+        <nav aria-label="举报列表分页">
+            <ul class="pagination mb-0">
+                {% if page_data.page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_data.page - 1 }}&amp;page_size={{ page_data.page_size }}">上一页</a>
+                </li>
+                {% endif %}
+                {% if page_data.page < page_data.total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_data.page + 1 }}&amp;page_size={{ page_data.page_size }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

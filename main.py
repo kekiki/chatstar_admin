@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import APP_TITLE, APP_HOST, APP_PORT
-from routers import auth_router, dashboard_router, user_router, anchor_router, order_router, app_list_router, app_review_router, product_router, gift_router, media_router, task_router, app_config_router
+from routers import auth_router, dashboard_router, user_router, user_report_router, anchor_router, order_router, app_list_router, app_review_router, product_router, gift_router, media_router, task_router, app_config_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(dashboard_router)
 app.include_router(user_router)
+app.include_router(user_report_router)
 app.include_router(anchor_router)
 app.include_router(order_router)
 app.include_router(app_list_router)

@@ -39,7 +39,10 @@ async def order_list(
     from routers.auth import require_login
     _user = require_login(request, db)
     page, page_size, offset = get_page_params(page, page_size)
-    q = select(models.PayOrder)
+    q = select(models.PayOrder).order_by(
+        models.PayOrder.created_time.desc().nulls_last(),
+        models.PayOrder.id.desc(),
+    )
 
     if keyword:
         q = q.where(

@@ -1,6 +1,7 @@
 from .auth import router as auth_router
 from .dashboard import router as dashboard_router
 from .user import router as user_router
+from .black_white import router as black_white_router
 from .user_report import router as user_report_router
 from .anchor import router as anchor_router
 from .order import router as order_router
@@ -12,5 +13,4 @@ from .media import router as media_router
 from .task import router as task_router
 from .app_config import router as app_config_router
 
-__all__ = ['auth_router', 'dashboard_router', 'user_router', 'user_report_router', 'anchor_router', 'order_router', 'app_list_router', 'app_review_router', 'product_router', 'gift_router', 'media_router', 'task_router', 'app_config_router']
-    
+__all__ = ['auth_router', 'dashboard_router', 'user_router', 'black_white_router', 'user_report_router', 'anchor_router', 'order_router', 'app_list_router', 'app_review_router', 'product_router', 'gift_router', 'media_router', 'task_router', 'app_config_router']

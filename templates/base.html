@@ -19,7 +19,8 @@
         .sidebar {
             width: 240px;
             background: #212529;
-            min-height: 100vh;
+            height: 100vh;
+            overflow-y: auto;
             position: fixed;
             top: 0;
             left: 0;
@@ -140,6 +141,7 @@ function setupModalEnter(modalId, submitBtnId) {
     <div class="p-3 text-white fs-5 border-bottom border-secondary">APP管理后台</div>
     <a href="/admin/dashboard" class="{% if active_menu == 'dashboard' %}active{% endif %}">实时看板</a>
     <a href="/admin/user" class="{% if active_menu == 'user' %}active{% endif %}">用户列表</a>
+    <a href="/admin/black_white" class="{% if active_menu == 'black_white' %}active{% endif %}">黑白名单</a>
     <a href="/admin/user_report" class="{% if active_menu == 'user_report' %}active{% endif %}">用户举报</a>
     <a href="/admin/anchor" class="{% if active_menu == 'anchor' %}active{% endif %}">主播列表</a>
     <a href="/admin/order" class="{% if active_menu == 'order' %}active{% endif %}">订单列表</a>

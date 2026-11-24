@@ -55,6 +55,7 @@
                     <th>所属应用</th>
                     <th>头像</th>
                     <th>昵称</th>
+                    <th title="按账号绑定和密码设置显示，不代表最近一次登录">登录方式</th>
                     <th>国家</th>
                     <th>IP</th>
                     <th>语言</th>
@@ -93,6 +94,18 @@
                         {% endif %}
                     </td>
                     <td class="ellipsis-cell" title="{{ item.nickname or '-' }}">{{ item.nickname or '-' }}</td>
+                    <td class="login-methods">
+                        {% if item.google_id %}
+                        <span class="badge text-bg-primary">Google 登录</span>
+                        {% elif item.device_id %}
+                        <span class="badge text-bg-secondary">游客登录</span>
+                        {% endif %}
+                        {% if item.password %}
+                        <span class="badge text-bg-info">密码登录</span>
+                        {% elif not item.google_id and not item.device_id %}
+                        <span class="text-muted">未记录</span>
+                        {% endif %}
+                    </td>
                     <td class="ellipsis-cell" title="{{ item.country or '-' }}">{{ item.country or '-' }}</td>
                     <td class="ellipsis-cell" title="{{ item.ip or '-' }}">{{ item.ip or '-' }}</td>
                     <td class="ellipsis-cell" title="{{ item.language_name or '-' }}">{{ item.language_name or '-' }}</td>

@@ -61,6 +61,33 @@ class AdminUserRoutesTest(unittest.TestCase):
         self.assertEqual(response.json()["code"], 200)
         self.assertEqual((self.user.avatar, self.user.nickname, self.user.country), ("", "New nickname", "CA"))
 
+    def test_user_list_shows_login_methods_without_exposing_credentials(self):
+        for fields, expected in (
+            ({"device_id": "device-1"}, {"游客登录"}),
+            ({"google_id": "google-account-id", "device_id": "device-1"}, {"Google 登录"}),
+            ({"device_id": "device-1", "password": "private-hash"}, {"游客登录", "密码登录"}),
+            ({"google_id": "google-account-id", "password": "private-hash"}, {"Google 登录", "密码登录"}),
+            ({}, {"未记录"}),
+        ):
+            with self.subTest(expected=expected):
+                users_result = Mock()
+                users_result.scalars.return_value.all.return_value = [AppUser(user_id=123, **fields)]
+                empty_result = Mock()
+                empty_result.scalars.return_value.all.return_value = []
+                count_result = Mock()
+                count_result.scalar_one.return_value = 1
+                self.db.execute.side_effect = [empty_result, count_result, users_result] + [empty_result] * 2
+
+                response = self.client.get("/admin/user")
+
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(">登录方式</th>", response.text)
+                cell = response.text.split('<td class="login-methods">', 1)[1].split("</td>", 1)[0]
+                labels = {label for label in ("游客登录", "Google 登录", "密码登录", "未记录") if label in cell}
+                self.assertEqual(labels, expected)
+                self.assertNotIn("private-hash", response.text)
+                self.assertNotIn("google-account-id", response.text)
+
     def test_changed_password_is_accepted_by_app_api_hash_config(self):
         # Keep this in sync with chatstar_api/app/security/jwt.py.
         app_passwords = CryptContext(schemes=["pbkdf2_sha256", "bcrypt", "sha256_crypt"], deprecated="auto")

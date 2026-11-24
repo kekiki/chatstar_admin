@@ -1,72 +1,210 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>实时数据看板</h2>
-<hr>
-<div class="row">
-    <!-- 图表1：新增付费 & 总付费 -->
-    <div class="col-md-6 mb-4">
-        <div class="card p-3">
-            <h5>付费数据趋势</h5>
-            <div id="payChart" style="height:350px;"></div>
-        </div>
+<style>
+    .dashboard-chart { height: 390px; min-width: 0; }
+    .dashboard-filter { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+    .dashboard-filter .form-label { margin-bottom: .25rem; }
+    .dashboard-filter .form-select { max-width: 240px; }
+    .dashboard-tooltip { padding: 2px; max-height: 300px; overflow: auto; }
+    .dashboard-tooltip th, .dashboard-tooltip td { padding: 2px 6px; }
+    .dashboard-tooltip td { text-align: right; }
+</style>
+
+<header class="d-flex flex-wrap align-items-baseline gap-3 mb-3">
+    <h2 class="mb-0">实时数据看板</h2>
+    <span class="text-muted small">北京时间</span>
+</header>
+<form class="dashboard-filter mb-3" method="get" action="/admin/dashboard">
+    <div>
+        <label for="statCountry" class="form-label small">国家</label>
+        <select id="statCountry" name="country" class="form-select form-select-sm">
+            <option value="">全部国家</option>
+            {% for code in countries %}
+            <option value="{{ code }}"{% if code == country %} selected{% endif %}>{{ code }}</option>
+            {% endfor %}
+        </select>
     </div>
-    <!-- 图表2：新增用户、日活 -->
-    <div class="col-md-6 mb-4">
-        <div class="card p-3">
-            <h5>用户增长/日活</h5>
-            <div id="userChart" style="height:350px;"></div>
-        </div>
+    <div>
+        <label for="statPackage" class="form-label small">应用</label>
+        <select id="statPackage" name="package" class="form-select form-select-sm">
+            <option value="">全部应用</option>
+            {% for key, name in apps.items() %}
+            <option value="{{ key }}"{% if key == package %} selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
     </div>
-    <!-- 图表3：付费率 -->
-    <div class="col-md-12">
-        <div class="card p-3">
-            <h5>新增付费率 / 日活付费率</h5>
-            <div id="rateChart" style="height:350px;"></div>
-        </div>
+    <div>
+        <label for="statDate" class="form-label small">统计日期</label>
+        <input id="statDate" name="date" class="form-control form-control-sm" type="date" value="{{ day }}" required>
     </div>
+    <div>
+        <label for="statCurrency" class="form-label small">收入币种</label>
+        <select id="statCurrency" name="currency" class="form-select form-select-sm">
+            {% for code in currency_options %}
+            <option value="{{ code }}"{% if code == currency %} selected{% endif %}>{{ code }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm px-3">刷新</button>
+</form>
+
+{% if not has_activity %}
+<div class="alert alert-light border mb-3 py-2 small">
+    {% if legacy_dau is not none %}当日全站日活 {{ legacy_dau }} 人，应用日活明细缺失。{% else %}该日期暂无日活记录。{% endif %}
 </div>
+{% endif %}
+{% if missing_prices %}
+<div class="alert alert-warning mb-3 py-2 small">{{ missing_prices }} 笔成功订单缺少金额或币种，已计入付费人数。</div>
+{% endif %}
+
+{% if rows %}
+<noscript><div class="alert alert-warning">启用 JavaScript 后可查看交互图表。</div></noscript>
+<div id="chartError" class="alert alert-warning" hidden>图表加载失败，请刷新页面。</div>
+<section class="card mb-3" aria-labelledby="incomeTitle">
+    <div class="card-body">
+        <h5 id="incomeTitle">{% if is_today %}今日{% endif %}收入统计</h5>
+        <p class="small text-muted mb-1">每组左侧为新增收入，右侧为全部收入，颜色代表支付渠道。新增收入来自当日注册用户。</p>
+        <p class="small text-muted mb-0">新增付费率 = 当日注册且付费人数 ÷ 新增用户数。活跃付费率 = 当日付费人数 ÷ 日活用户数。</p>
+        <div id="incomeChart" class="dashboard-chart"></div>
+    </div>
+</section>
+<section class="card mb-3" aria-labelledby="userTitle">
+    <div class="card-body">
+        <h5 id="userTitle">用户统计</h5>
+        <p class="small text-muted mb-0">日活按当日注册、登录、发起已认证请求或成功付费的用户去重统计。</p>
+        <div id="userChart" class="dashboard-chart"></div>
+    </div>
+</section>
+<section class="card mb-3" aria-labelledby="payerTitle">
+    <div class="card-body">
+        <h5 id="payerTitle">用户收入统计</h5>
+        <p class="small text-muted mb-0">付费人数涵盖全部币种，每名付费用户收入按所选币种的付费人数计算。</p>
+        <div id="payerChart" class="dashboard-chart"></div>
+        <p class="small text-muted mb-0">金额按成功订单统计。订单未记录金额时，以当前商品配置价估算。</p>
+    </div>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <script>
-// 后端传入的统计数据转JS数组
-const statData = {{ stat_list | tojson }};
-const dates = statData.map(item => item.stat_date);
-const newPayMoney = statData.map(item => item.total_pay_money);
-const newUser = statData.map(item => item.new_user);
-const dau = statData.map(item => item.dau);
-// 计算付费率
-const newPayRate = statData.map(item => item.new_pay_user / (item.new_user || 1) * 100);
-const dauPayRate = statData.map(item => item.new_pay_user / (item.dau || 1) * 100);
+(() => {
+    if (!window.echarts) {
+        document.getElementById('chartError').hidden = false;
+        return;
+    }
 
-// 付费图表
-let payChart = echarts.init(document.getElementById('payChart'));
-payChart.setOption({
-    xAxis: {data: dates},
-    yAxis: {},
-    series: [{name:"总付费", type:"bar", data:newPayMoney}]
-});
+    const rows = {{ rows | tojson }};
+    const currency = {{ currency | tojson }};
+    const formatNumber = new Intl.NumberFormat('zh-CN');
+    const formatAmount = new Intl.NumberFormat('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const number = value => value == null ? '—' : formatNumber.format(value);
+    const money = value => value == null ? '—' : `${formatAmount.format(value)} ${currency}`;
+    const rate = value => value == null ? '—' : `${value.toFixed(2)}%`;
+    const encode = value => echarts.format.encodeHTML(String(value));
+    const charts = [];
+    const names = rows.map(row => row.app_name);
+    const channelNames = [...new Set(rows.flatMap(row => row.channels.map(channel => channel.name)))].sort();
+    const channelColors = [
+        '#309fcb', '#52d0d6', '#81ccac', '#f2bf42', '#fc9779', '#eb638b', '#a487e0', '#7a8cf3',
+        '#70a658', '#e4a05c', '#c973b4', '#4f78aa', '#a6bd54', '#c55a48', '#7a67bd', '#61918b',
+    ];
+    const newColor = '#2c85c6';
+    const activeColor = '#2eb9cc';
+    const manyApps = rows.length > 12;
 
-// 用户日活图表
-let userChart = echarts.init(document.getElementById('userChart'));
-userChart.setOption({
-    xAxis: {data: dates},
-    yAxis: {},
-    series: [
-        {name:"新增用户", type:"line", data:newUser},
-        {name:"日活DAU", type:"line", data:dau}
-    ]
-});
+    const details = (row, fields, extra = '') => `
+        <div class="dashboard-tooltip">
+            <strong>${encode(row.app_name)}</strong>
+            ${row.package === row.app_name ? '' : `<div class="text-muted small mb-1">${encode(row.package)}</div>`}
+            <table><tbody>${fields.map(([label, value]) =>
+                `<tr><th class="fw-normal">${label}</th><td class="fw-semibold">${value}</td></tr>`
+            ).join('')}</tbody></table>
+            ${extra}
+        </div>`;
 
-// 付费率图表
-let rateChart = echarts.init(document.getElementById('rateChart'));
-rateChart.setOption({
-    tooltip: {trigger: 'axis', formatter: '{b}<br/>{a}: {c}%'},
-    xAxis: {data: dates},
-    yAxis: {name:"百分比(%)"},
-    series: [
-        {name:"新增付费率", type:"line", data:newPayRate},
-        {name:"日活付费率", type:"line", data:dauPayRate}
-    ]
-});
+    const chartOptions = formatter => ({
+        animation: rows.length < 50,
+        aria: {enabled: true},
+        tooltip: {
+            trigger: 'axis', axisPointer: {type: 'shadow'}, confine: true, enterable: true,
+            formatter: items => items.length ? formatter(rows[items[0].dataIndex]) : '',
+        },
+        legend: {type: 'scroll', top: 5},
+        grid: {left: 12, right: 12, top: 72, bottom: manyApps ? 60 : 20, containLabel: true},
+        xAxis: {type: 'category', data: names, axisLabel: {hideOverlap: true, width: 125, overflow: 'truncate'}},
+        dataZoom: manyApps ? [{type: 'slider', bottom: 10, height: 20, endValue: 11}] : [],
+    });
+    const axis = (name, formatter, extra = {}) => ({
+        type: 'value', name, nameTextStyle: {align: 'left'}, axisLabel: {formatter},
+        splitLine: {lineStyle: {color: '#e5ebf4'}}, ...extra,
+    });
+    const bar = (name, field, color) => ({
+        name, type: 'bar', barMaxWidth: 26, data: rows.map(row => row[field]),
+        itemStyle: {color, borderRadius: [3, 3, 0, 0]},
+        label: {show: true, position: 'top', color: '#536075', formatter: ({value}) => value > 0 ? number(value) : ''},
+        labelLayout: {hideOverlap: true},
+    });
+    const line = (name, field, color, distance, formatter) => ({
+        name, type: 'line', yAxisIndex: 1, data: rows.map(row => row[field]),
+        symbol: 'emptyCircle', symbolSize: 7, itemStyle: {color},
+        label: {show: true, position: 'top', distance, color, formatter: ({value}) => value == null ? '' : formatter(value)},
+        labelLayout: {hideOverlap: true},
+    });
+    const mount = (id, options) => {
+        const chart = echarts.init(document.getElementById(id));
+        chart.setOption(options);
+        charts.push(chart);
+    };
+
+    const rateSeries = [
+        line('新增付费率', 'new_pay_rate', '#267ac5', 5, rate),
+        line('活跃付费率', 'dau_pay_rate', '#00949e', 19, rate),
+    ];
+    const incomeSeries = channelNames.flatMap((name, index) => ['new', 'total'].map(field => ({
+        name, type: 'bar', stack: field, barMaxWidth: 27,
+        itemStyle: {color: channelColors[index % channelColors.length], opacity: field === 'new' ? 0.64 : 1},
+        data: rows.map(row => row.channels.find(channel => channel.name === name)?.[field] ?? 0),
+    })));
+    if (!incomeSeries.length) {
+        incomeSeries.push(bar('新增收入', 'new_income', newColor), bar('全部收入', 'total_income', activeColor));
+    }
+    mount('incomeChart', {
+        ...chartOptions(row => details(row, [
+            ['新增收入', money(row.new_income)], ['全部收入', money(row.total_income)],
+            ['新增付费率', rate(row.new_pay_rate)], ['活跃付费率', rate(row.dau_pay_rate)],
+        ], row.channels.length ? `
+            <table class="border-top mt-2"><thead><tr><th>支付渠道</th><th>新增收入</th><th>全部收入</th></tr></thead>
+                <tbody>${row.channels.map(channel => `
+                    <tr><th class="fw-normal">${encode(channel.name)}</th>
+                        <td>${money(channel.new)}</td><td>${money(channel.total)}</td></tr>`).join('')}</tbody>
+            </table>` : '')),
+        color: channelColors,
+        legend: {type: 'scroll', top: 5, data: [...rateSeries.map(series => series.name),
+            ...(channelNames.length ? channelNames : incomeSeries.map(series => series.name))]},
+        yAxis: [axis(`收入（${currency}）`, number),
+            axis('付费率', '{value}%', {min: 0, nameTextStyle: {align: 'right'}, splitLine: {show: false}})],
+        series: [...incomeSeries, ...rateSeries],
+    });
+    mount('userChart', {
+        ...chartOptions(row => details(row, [['新增用户', number(row.new_users)], ['日活用户', number(row.dau)]])),
+        yAxis: axis('人数', number, {minInterval: 1}),
+        series: [bar('新增用户', 'new_users', newColor), bar('日活用户', 'dau', activeColor)],
+    });
+    mount('payerChart', {
+        ...chartOptions(row => details(row, [
+            ['新增付费用户', number(row.new_payers)], ['全部付费用户', number(row.total_payers)],
+            ['成功订单', number(row.orders)], ['新增收入', money(row.new_income)], ['全部收入', money(row.total_income)],
+            ['每名活跃用户收入', money(row.income_per_active)], ['每名付费用户收入', money(row.income_per_payer)],
+        ])),
+        yAxis: [axis('人数', number, {minInterval: 1}),
+            axis(`人均收入（${currency}）`, number, {min: 0, nameTextStyle: {align: 'right'}, splitLine: {show: false}})],
+        series: [bar('新增付费用户', 'new_payers', newColor), bar('全部付费用户', 'total_payers', activeColor),
+            line('每名付费用户收入', 'income_per_payer', '#c04978', 5, money)],
+    });
+    const observer = new ResizeObserver(() => charts.forEach(chart => chart.resize()));
+    charts.forEach(chart => observer.observe(chart.getDom()));
+})();
 </script>
+{% else %}
+<div class="card"><div class="card-body text-center text-muted py-4">暂无应用数据</div></div>
+{% endif %}
 {% endblock %}

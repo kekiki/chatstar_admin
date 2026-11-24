@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">黑白名单</h2>
+
+<nav class="nav nav-tabs mb-3" aria-label="名单对象">
+    {% for key, label in list_types.items() %}
+    <a class="nav-link{% if key == kind %} active{% endif %}"
+       {% if key == kind %}aria-current="page"{% endif %}
+       href="?{{ {'kind': key, 'status': status, 'page_size': page_data.page_size}|urlencode }}">{{ label }}</a>
+    {% endfor %}
+</nav>
+
+<form method="get" class="row gy-2 gx-3 align-items-end mb-3">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <input type="hidden" name="page_size" value="{{ page_data.page_size }}">
+    <div class="col-auto">
+        <label for="keyword" class="form-label">{{ identifier_label }}</label>
+        <input type="search" class="form-control" id="keyword" name="keyword" value="{{ keyword }}">
+    </div>
+    <div class="col-auto">
+        <label for="status" class="form-label">状态</label>
+        <select class="form-select" id="status" name="status">
+            <option value="-1"{% if status == -1 %} selected{% endif %}>全部</option>
+            {% for value, (label, badge) in status_labels.items() %}
+            <option value="{{ value.value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">查询</button>
+        <a class="btn btn-outline-secondary" href="?{{ {'kind': kind, 'page_size': page_data.page_size}|urlencode }}">重置</a>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0 compact-table">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">记录 ID</th>
+                    <th scope="col">{{ identifier_label }}</th>
+                    <th scope="col">状态</th>
+                    <th scope="col">备注</th>
+                    <th scope="col">创建时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_data.list %}
+                {% set identifier = item|attr(identifier_key) %}
+                {% set label, badge = status_labels.get(item.status, ('未知', 'text-bg-secondary')) %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td class="text-wrap text-break">{{ identifier if identifier is not none and identifier != '' else '-' }}</td>
+                    <td><span class="badge {{ badge }}">{{ label }}</span></td>
+                    <td class="text-wrap text-break">{{ item.remarks or '-' }}</td>
+                    <td>{{ item.created_time.strftime('%Y-%m-%d %H:%M:%S') if item.created_time else '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-3">暂无名单记录</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="p-3 d-flex justify-content-between align-items-center">
+        <span>共 {{ page_data.total }} 条{% if page_data.total_pages %}，第 {{ page_data.page }} / {{ page_data.total_pages }} 页{% endif %}</span>
+        {% if page_data.total_pages > 1 or page_data.page > 1 %}
+        {% set filters = {'kind': kind, 'status': status, 'keyword': keyword, 'page_size': page_data.page_size} %}
+        <nav aria-label="名单分页">
+            <ul class="pagination mb-0">
+                {% if page_data.page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="?{{ filters|urlencode }}&amp;page={{ page_data.page - 1 }}">上一页</a>
+                </li>
+                {% endif %}
+                {% if page_data.page < page_data.total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="?{{ filters|urlencode }}&amp;page={{ page_data.page + 1 }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Date, Integer, String, Float
 from database import Base
 
 class DailyStat(Base):
@@ -9,3 +9,10 @@ class DailyStat(Base):
     dau = Column(Integer, default=0) # 日活
     new_pay_user = Column(Integer, default=0) # 新增付费用户
     total_pay_money = Column(Float, default=0) # 总付费金额
+
+
+class DailyUserActivity(Base):
+    __tablename__ = "daily_user_activity"
+
+    stat_date = Column(Date, primary_key=True)
+    user_id = Column(Integer, primary_key=True)
